@@ -859,30 +859,8 @@ function formatPrice(price) {
 // ========== Initialize Everything ==========
 
 function initAuth() {
-    // Only apply to admin pages
-    if (!window.location.pathname.includes('/admin/') || window.location.pathname.includes('login.html')) {
-        return;
-    }
-
-    const token = localStorage.getItem('elfakher_token');
-
-    if (!token) {
-        window.location.href = '/admin/login.html';
-        return;
-    }
-
-    // Verify token validity
-    fetch('/api/auth/verify', {
-        headers: { 'Authorization': `Bearer ${token}` }
-    }).then(res => {
-        if (!res.ok) {
-            localStorage.removeItem('elfakher_token');
-            localStorage.removeItem('elfakher_user');
-            window.location.href = '/admin/login.html';
-        }
-    }).catch(err => {
-        console.error('Auth check error:', err);
-    });
+    // تم تعطيل المصادقة مؤقتاً بناءً على طلب المستخدم
+    console.log('Auth disabled');
 }
 
 function logout() {
