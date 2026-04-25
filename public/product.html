@@ -814,10 +814,7 @@
     </a>
 
     <!-- ======== CART NOTIFICATION ======== -->
-    <div class="cart-notification" id="cartNotification">
-        <span class="material-icons-outlined">check_circle</span>
-        تمت الإضافة إلى السلة
-    </div>
+
 
     <!-- ======== SCRIPTS ======== -->
     <script src="../js/main.js"></script>
@@ -942,7 +939,7 @@
             const color = colorEl ? (colorEl.getAttribute('title') || colorEl.dataset.color) : null;
             let size = sizeEl ? sizeEl.dataset.size : null;
 
-            if (!size) { alert('الرجاء اختيار المقاس'); return; }
+            if (!size) { showNotification('الرجاء اختيار المقاس', 'warning'); return; }
 
             const title = document.getElementById('productTitle').textContent;
             const price = window.productPrice || 0;
@@ -969,7 +966,7 @@
             else { cartData.push(item); }
 
             try { localStorage.setItem(cartKey, JSON.stringify(cartData)); }
-            catch (e) { alert('خطأ في حفظ السلة'); return; }
+            catch (e) { showNotification('خطأ في حفظ السلة', 'warning'); return; }
 
             updateCartCount();
 
@@ -1026,7 +1023,7 @@
                 if (result.success) {
                     submitBtn.innerHTML = '<span class="material-icons-outlined">check</span> تم بنجاح!';
                     submitBtn.style.background = '#10B981';
-                    alert(`تم استلام طلبك بنجاح! رقم الطلب: ${result.data.orderNumber}\nسنتواصل معك قريباً.`);
+                    showNotification(`تم استلام طلبك بنجاح! رقم الطلب: ${result.data.orderNumber}\nسنتواصل معك قريباً.`, 'success');
                     form.reset();
                     setTimeout(() => { submitBtn.innerHTML = originalText; submitBtn.style.background = ''; submitBtn.disabled = false; }, 2000);
                 } else { throw new Error(result.message || 'حدث خطأ'); }
