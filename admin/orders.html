@@ -431,8 +431,6 @@
                             <div class="form-group"><label class="form-label">الكمية</label><input type="number"
                                     class="form-input" name="quantity" value="1" min="1"></div>
                         </div>
-                        <div class="form-group"><label class="form-label">اللون</label><input type="text"
-                                class="form-input" name="color" placeholder="أبيض، أسود..."></div>
                     </div>
 
                     <div class="form-section">
@@ -1235,7 +1233,7 @@
                 productTitle: selectedOption.dataset.title || selectedOption.textContent,
                 quantity: parseInt(form.querySelector('[name="quantity"]').value) || 1,
                 size: form.querySelector('[name="size"]').value || null,
-                color: form.querySelector('[name="color"]').value || null
+                color: null
             };
 
             try {

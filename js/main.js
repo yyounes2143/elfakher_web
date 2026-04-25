@@ -129,7 +129,7 @@ if (!window.cart) {
             // Find existing item with same product and options
             const existingIndex = this.items.findIndex(item =>
                 item.productId === product.productId &&
-                item.color === product.color &&
+
                 item.size === product.size &&
                 item.collar === product.collar &&
                 item.button === product.button &&
@@ -298,13 +298,13 @@ if (!window.cart) {
             const parts = [];
 
             if (item.type === 'fabric') {
-                if (item.color) parts.push(`اللون: ${item.color}`);
+
                 // if (item.unit) parts.push(`الوحدة: ${item.unit}`);
                 return parts.join(' | ');
             }
 
             // For clothes
-            if (item.color) parts.push(`اللون: ${item.color}`);
+
             if (item.size) parts.push(`المقاس: ${item.size}`);
 
             // Optional features if they exist and are not 'none' or default
@@ -527,7 +527,6 @@ function handleAddToCart() {
     const selectedButton = document.querySelector('[name="button"]:checked')?.value || null;
     const selectedSleeve = document.querySelector('[name="sleeve"]:checked')?.value || null;
     const quantity = parseInt(document.getElementById('qtyInput')?.value) || 1;
-    const selectedColor = document.querySelector('.color-choice.selected')?.getAttribute('title') || null;
 
     // Get product info from page
     const title = document.getElementById('productTitle')?.textContent ||
@@ -558,7 +557,6 @@ function handleAddToCart() {
         price,
         image,
         quantity,
-        color: selectedColor,
         size: selectedSize,
         collar: selectedCollar,
         button: selectedButton,

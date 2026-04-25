@@ -357,7 +357,7 @@ router.patch('/:id/notes', authMiddleware, async (req, res) => {
  */
 router.post('/quick', async (req, res) => {
     try {
-        const { name, surname, phone, wilaya, productId, productTitle, quantity = 1, color, size, options } = req.body;
+        const { name, surname, phone, wilaya, productId, productTitle, quantity = 1, size, options } = req.body;
 
         if (!name || !surname || !phone || !wilaya) {
             return res.status(400).json({
@@ -436,8 +436,8 @@ router.post('/quick', async (req, res) => {
                     order_id, product_id, product_name, quantity, unit_price, 
                     total_price, size_number, created_at
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
-            `, [orderId, productId, productTitle || 'منتج', quantity, unitPrice, totalAmount, size ? parseInt(size) : null, null]);
+                VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+            `, [orderId, productId, productTitle || 'منتج', quantity, unitPrice, totalAmount, size ? parseInt(size) : null]);
         }
 
         res.json({
@@ -551,9 +551,9 @@ router.post('/checkout', async (req, res) => {
                     order_id, product_id, fabric_id, product_name, quantity, unit_price, 
                     total_price, size_number, created_at
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
             `, [orderId, productId, fabricId, itemName, qty, unitPrice,
-                unitPrice * qty, item.size ? parseInt(item.size) : null, item.null]);
+                unitPrice * qty, item.size ? parseInt(item.size) : null]);
         }
 
         res.json({
