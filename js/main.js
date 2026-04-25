@@ -880,11 +880,18 @@ async function loadStoreSettings() {
         if (result.success && result.data) {
             const data = result.data;
 
+            // Clean up JSONB extra quotes for string settings
+            for (const key in data) {
+                if (typeof data[key] === 'string') {
+                    data[key] = data[key].replace(/^"|"$/g, '');
+                }
+            }
+
             // Format phone number correctly depending on whether it has a plus or not
             const formatWa = (phone) => {
                 if (!phone) return '';
                 // Remove all non-digits, but keep the plus at the beginning if it exists
-                let cleaned = phone.replace(/[^d+]/g, '');
+                let cleaned = phone.replace(/[^\d+]/g, '');
                 // If it starts with a plus, remove it for WA link (e.g. +213 -> 213)
                 if (cleaned.startsWith('+')) {
                    cleaned = cleaned.substring(1);
