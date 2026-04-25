@@ -280,15 +280,16 @@
                 flex-direction: column; 
                 gap: 2rem; 
                 align-items: flex-start; 
-                padding-right: 2rem; 
+                padding-right: 1rem;
+                padding-left: 1rem;
             }
             .stepper-line { 
                 width: 4px; 
-                height: 100%;
-                bottom: 24px;
+                height: calc(100% - 48px);
+                bottom: auto;
                 top: 24px; 
                 left: auto; 
-                right: 3rem; 
+                right: calc(1rem + 24px - 2px);
             }
             .stepper-progress {
                 width: 100% !important;
@@ -298,7 +299,8 @@
             .step-item { 
                 flex-direction: row; 
                 width: 100%; 
-                gap: 1rem;
+                gap: 1.5rem;
+                align-items: center;
             }
             .step-item > div {
                 display: flex;

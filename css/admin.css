@@ -494,12 +494,18 @@
 
 @media (max-width: 1024px) {
     .admin-sidebar {
-        transform: translateX(100%);
+        transform: translateX(105%);
+        visibility: hidden;
+        opacity: 0;
+        transition: transform 0.3s, visibility 0s 0.3s, opacity 0.3s;
         box-shadow: -5px 0 25px rgba(0, 0, 0, 0.2);
     }
 
     .admin-sidebar.open {
         transform: translateX(0);
+        visibility: visible;
+        opacity: 1;
+        transition: transform 0.3s, visibility 0s, opacity 0.3s;
     }
 
     .admin-main {
