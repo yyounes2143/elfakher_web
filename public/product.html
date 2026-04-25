@@ -833,11 +833,58 @@
         });
 
         // ===== IMAGE GALLERY =====
-        window.changeImage = function(el, src) {
+        window.currentImageIndex = 0;
+
+        window.changeImage = function(el, src, index) {
             document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
             if (el) el.classList.add('active');
+            if (index !== undefined) {
+                window.currentImageIndex = index;
+            }
             renderMainMedia(src);
         };
+
+        function setupSwipeGallery() {
+            const container = document.getElementById('mainImageContainer');
+            if (!container) return;
+
+            let touchstartX = 0;
+            let touchendX = 0;
+
+            container.addEventListener('touchstart', e => {
+                touchstartX = e.changedTouches[0].screenX;
+            }, {passive: true});
+
+            container.addEventListener('touchend', e => {
+                touchendX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, {passive: true});
+
+            function handleSwipe() {
+                if (!window.productImages || window.productImages.length <= 1) return;
+
+                const threshold = 50;
+                if (touchendX < touchstartX - threshold) {
+                    // Swiped left, show next image
+                    let newIndex = (window.currentImageIndex + 1) % window.productImages.length;
+                    triggerImageChangeByIndex(newIndex);
+                }
+                if (touchendX > touchstartX + threshold) {
+                    // Swiped right, show previous image
+                    let newIndex = (window.currentImageIndex - 1 + window.productImages.length) % window.productImages.length;
+                    triggerImageChangeByIndex(newIndex);
+                }
+            }
+        }
+
+        function triggerImageChangeByIndex(index) {
+            const img = window.productImages[index];
+            if (!img) return;
+            const src = typeof img === 'string' ? img : img.url;
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            const el = thumbnails[index] || null;
+            changeImage(el, src, index);
+        }
 
         function renderMainMedia(src) {
             const container = document.getElementById('mainImageContainer');
@@ -865,27 +912,31 @@
             const name = el.getAttribute('title') || el.dataset.color || '-';
             document.getElementById('colorName').textContent = name;
 
-            // Image-color linking
+            // Image-color linking logic: highlight matching images, dim others, and don't reconstruct the whole DOM
             if (window.imageColorLinkingEnabled && window.productImages && window.productImages.length > 0) {
                 const colorId = el.dataset.colorId;
-                const filteredImages = window.productImages.filter(img => {
-                    if (typeof img === 'string') return true;
-                    return !img.colorId || img.colorId === colorId;
-                });
-                const imagesToShow = (filteredImages.some(img => typeof img !== 'string' && img.colorId === colorId)) ? filteredImages : window.productImages;
-                const firstImg = typeof imagesToShow[0] === 'string' ? imagesToShow[0] : imagesToShow[0].url;
-                renderMainMedia(firstImg);
+                const thumbnails = document.querySelectorAll('.thumbnail');
+                let firstMatchingUrl = null;
+                let firstMatchingIndex = -1;
 
-                const thumbsContainer = document.getElementById('thumbnails');
-                if (thumbsContainer) {
-                    thumbsContainer.innerHTML = imagesToShow.map((img, idx) => {
-                        const imgUrl = typeof img === 'string' ? img : img.url;
-                        const isVideo = imgUrl.startsWith('data:video') || imgUrl.endsWith('.mp4') || imgUrl.endsWith('.webm') || imgUrl.includes('video');
-                        const content = isVideo
-                            ? `<div style="width:100%;height:100%;background:#000;display:flex;align-items:center;justify-content:center;color:white;"><span class="material-icons-outlined" style="font-size:1rem;">videocam</span></div>`
-                            : `<img src="${imgUrl}" alt="">`;
-                        return `<div class="thumbnail ${idx === 0 ? 'active' : ''}" onclick="changeImage(this, '${imgUrl}')">${content}</div>`;
-                    }).join('');
+                window.productImages.forEach((img, idx) => {
+                    const isMatch = typeof img === 'string' || !img.colorId || img.colorId === colorId;
+                    if (isMatch && firstMatchingIndex === -1) {
+                        firstMatchingIndex = idx;
+                        firstMatchingUrl = typeof img === 'string' ? img : img.url;
+                    }
+
+                    if (thumbnails[idx]) {
+                        if (isMatch) {
+                            thumbnails[idx].style.opacity = '1';
+                        } else {
+                            thumbnails[idx].style.opacity = '0.3';
+                        }
+                    }
+                });
+
+                if (firstMatchingUrl && firstMatchingIndex !== -1) {
+                    changeImage(thumbnails[firstMatchingIndex], firstMatchingUrl, firstMatchingIndex);
                 }
             }
         };
@@ -1104,7 +1155,10 @@
                 let images = (p.images && p.images.length > 0)
                     ? p.images.map(img => (typeof img === 'string' ? img : img.url))
                     : ['../assets/logo.png'];
+
+                window.currentImageIndex = 0;
                 renderMainMedia(images[0]);
+                setupSwipeGallery();
 
                 const thumbsContainer = document.getElementById('thumbnails');
                 if (images.length > 1) {
@@ -1113,7 +1167,7 @@
                         const content = isVideo
                             ? `<div style="width:100%;height:100%;background:#000;display:flex;align-items:center;justify-content:center;color:white;"><span class="material-icons-outlined" style="font-size:1rem;">videocam</span></div>`
                             : `<img src="${src}" alt="">`;
-                        return `<div class="thumbnail ${idx === 0 ? 'active' : ''}" onclick="changeImage(this, '${src}')">${content}</div>`;
+                        return `<div class="thumbnail ${idx === 0 ? 'active' : ''}" onclick="changeImage(this, '${src}', ${idx})">${content}</div>`;
                     }).join('');
                 } else { thumbsContainer.style.display = 'none'; }
 
