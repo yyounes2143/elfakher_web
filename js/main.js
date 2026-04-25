@@ -497,14 +497,6 @@ function populateWilayaSelect() {
     });
 }
 
-// Format Price
-function formatPrice(price) {
-    return new Intl.NumberFormat('ar-DZ', {
-        style: 'decimal',
-        minimumFractionDigits: 0
-    }).format(price) + ' DZD';
-}
-
 // ========== Product Page Functions ==========
 
 // Add to Cart Button
@@ -615,8 +607,8 @@ function updateCartTotals() {
     const subtotalEl = document.querySelector('.summary-row:first-child span:last-child');
     const totalEl = document.querySelector('.summary-row.total span:last-child');
 
-    if (subtotalEl) subtotalEl.textContent = formatNumber(subtotal) + ' دج';
-    if (totalEl) totalEl.textContent = formatNumber(subtotal) + ' دج';
+    if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal);
+    if (totalEl) totalEl.textContent = formatPrice(subtotal);
 }
 
 // ========== Checkout Page Functions ==========
