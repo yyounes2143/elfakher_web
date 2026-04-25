@@ -947,7 +947,7 @@
             const title = document.getElementById('productTitle').textContent;
             const price = window.productPrice || 0;
             const mainImg = document.getElementById('mainImage')?.src || '';
-            const image = mainImg.length > 2000 ? '' : mainImg;
+            const image = mainImg;
 
             const item = {
                 productId: id, title, price, image, quantity: qty,
