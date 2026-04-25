@@ -534,7 +534,7 @@ function handleAddToCart() {
     }
 
     const mainImg = document.getElementById('mainImage')?.src || '';
-    const image = mainImg.length > 2000 ? '' : mainImg;
+    const image = mainImg;
 
     // Check for custom measurements
     const customMeasurements = {};
