@@ -869,10 +869,133 @@ function logout() {
     window.location.href = '/admin/login.html';
 }
 
+
+// Load Store Settings
+async function loadStoreSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        if (!response.ok) return;
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const data = result.data;
+
+            // Format phone number correctly depending on whether it has a plus or not
+            const formatWa = (phone) => {
+                if (!phone) return '';
+                // Remove all non-digits, but keep the plus at the beginning if it exists
+                let cleaned = phone.replace(/[^d+]/g, '');
+                // If it starts with a plus, remove it for WA link (e.g. +213 -> 213)
+                if (cleaned.startsWith('+')) {
+                   cleaned = cleaned.substring(1);
+                }
+                return cleaned;
+            };
+
+            // 1. WhatsApp Links
+            const waNumber = data.whatsapp_number || data.store_phone;
+            if (waNumber) {
+                const waLink = 'https://wa.me/' + formatWa(waNumber);
+
+                // Update hrefs
+                document.querySelectorAll('.whatsapp-float, .whatsapp-btn, .social-wa, a[href^="https://wa.me/"]').forEach(el => {
+                    el.href = waLink;
+                });
+
+                // Update text content where the link text itself is a whatsapp text, but don't override the SVG icons
+                document.querySelectorAll('a[href^="https://wa.me/"]').forEach(el => {
+                    // Check if the element contains an SVG or if it's purely text
+                    if (!el.querySelector('svg') && !el.classList.contains('whatsapp-float') && !el.classList.contains('whatsapp-btn') && !el.classList.contains('social-wa')) {
+                         if (el.textContent.trim() === 'واتساب' || el.textContent.trim() === 'Whatsapp') {
+                             // leave it
+                         }
+                    }
+                });
+            }
+
+            // 2. Phone Links
+            if (data.store_phone) {
+                document.querySelectorAll('a[href^="tel:"]').forEach(el => {
+                    el.href = 'tel:' + data.store_phone;
+                    // If the text looks like a phone number, update it. Otherwise (if it says "Call Us", leave it)
+                    // If it has children (like svgs), avoid changing innerText entirely.
+                    if (el.children.length === 0 && !el.querySelector('svg')) {
+                        el.textContent = data.store_phone;
+                    }
+                });
+
+                // Specifically targeting phone displays in contact page
+                document.querySelectorAll('.contact-phone-display').forEach(el => {
+                   el.textContent = data.store_phone;
+                });
+            }
+
+            // 3. Email Links
+            if (data.store_email) {
+                document.querySelectorAll('a[href^="mailto:"]').forEach(el => {
+                    el.href = 'mailto:' + data.store_email;
+                    if (el.children.length === 0 && !el.querySelector('svg')) {
+                        el.textContent = data.store_email;
+                    }
+                });
+
+                // Specifically targeting email displays in contact page
+                document.querySelectorAll('.contact-email-display').forEach(el => {
+                   el.textContent = data.store_email;
+                });
+            }
+
+            // 4. Social Links
+            const updateSocial = (selector, url) => {
+                if (url) {
+                    document.querySelectorAll(selector).forEach(el => {
+                        el.href = url;
+                        el.style.display = ''; // Show if hidden
+                    });
+                } else {
+                    document.querySelectorAll(selector).forEach(el => {
+                        // Optionally hide them if empty
+                        el.style.display = 'none';
+                    });
+                }
+            };
+
+            updateSocial('.social-fb, .social-fb-link', data.social_facebook);
+            updateSocial('.social-ig, .social-ig-link', data.social_instagram);
+            updateSocial('.social-tt, .social-tt-link', data.social_tiktok);
+
+            // 5. Store Notes
+            if (data.store_notes) {
+                document.querySelectorAll('.dynamic-store-notes').forEach(el => {
+                    el.textContent = data.store_notes;
+                    el.style.display = 'block';
+
+                    // Show parent container if it was hidden
+                    const parentSection = el.closest('.store-notes-section');
+                    if (parentSection) {
+                        parentSection.style.display = '';
+                    }
+                });
+            } else {
+                document.querySelectorAll('.dynamic-store-notes').forEach(el => {
+                    el.style.display = 'none';
+                    const parentSection = el.closest('.store-notes-section');
+                    if (parentSection) {
+                        parentSection.style.display = 'none';
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading store settings:', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initAuth(); // التحقق من المصادقة أولاً
     initDarkMode();
     initMobileMenu();
+    loadStoreSettings();
     initProductGallery();
     initSizeSelection();
     initQuickOrderForm();

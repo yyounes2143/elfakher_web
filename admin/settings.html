@@ -836,6 +836,9 @@
                         <div class="form-group"><label class="form-label">وصف المتجر</label><textarea class="form-input"
                                 rows="3" id="storeDesc"></textarea>
                         </div>
+                        <div class="form-group"><label class="form-label">ملاحظات المتجر (تظهر للعملاء)</label><textarea class="form-input"
+                                rows="3" id="storeNotes" placeholder="أضف أي ملاحظات أو شروط تود عرضها للعملاء..."></textarea>
+                        </div>
 
                         <div class="form-row">
                             <div class="form-group"><label class="form-label">رابط فيسبوك</label><input type="url"
@@ -1275,7 +1278,8 @@
             'store_description': 'storeDesc',
             'social_facebook': 'storeFacebook',
             'social_instagram': 'storeInstagram',
-            'social_tiktok': 'storeTiktok'
+            'social_tiktok': 'storeTiktok',
+            'store_notes': 'storeNotes'
         };
 
         async function loadSettings() {
