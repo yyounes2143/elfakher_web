@@ -843,7 +843,7 @@
             const container = document.getElementById('mainImageContainer');
             if (!container) return;
             container.innerHTML = '';
-            const isVideo = src.startsWith('data:video') || src.endsWith('.mp4') || src.endsWith('.webm');
+            const isVideo = src.startsWith('data:video') || src.endsWith('.mp4') || src.endsWith('.webm') || src.includes('video');
             if (isVideo) {
                 const video = document.createElement('video');
                 video.src = src; video.controls = true; video.autoplay = true; video.muted = true;
@@ -867,12 +867,12 @@
 
             // Image-color linking
             if (window.imageColorLinkingEnabled && window.productImages && window.productImages.length > 0) {
-                const colorValue = el.dataset.color;
+                const colorId = el.dataset.colorId;
                 const filteredImages = window.productImages.filter(img => {
                     if (typeof img === 'string') return true;
-                    return !img.color || img.color === colorValue;
+                    return !img.colorId || img.colorId === colorId;
                 });
-                const imagesToShow = filteredImages.length > 0 ? filteredImages : window.productImages;
+                const imagesToShow = (filteredImages.some(img => typeof img !== 'string' && img.colorId === colorId)) ? filteredImages : window.productImages;
                 const firstImg = typeof imagesToShow[0] === 'string' ? imagesToShow[0] : imagesToShow[0].url;
                 renderMainMedia(firstImg);
 
@@ -880,7 +880,7 @@
                 if (thumbsContainer) {
                     thumbsContainer.innerHTML = imagesToShow.map((img, idx) => {
                         const imgUrl = typeof img === 'string' ? img : img.url;
-                        const isVideo = imgUrl.endsWith('.mp4') || imgUrl.endsWith('.webm');
+                        const isVideo = imgUrl.startsWith('data:video') || imgUrl.endsWith('.mp4') || imgUrl.endsWith('.webm') || imgUrl.includes('video');
                         const content = isVideo
                             ? `<div style="width:100%;height:100%;background:#000;display:flex;align-items:center;justify-content:center;color:white;"><span class="material-icons-outlined" style="font-size:1rem;">videocam</span></div>`
                             : `<img src="${imgUrl}" alt="">`;
@@ -911,8 +911,7 @@
                         colorEl.classList.remove('selected');
                         const firstAvailable = document.querySelector('.color-choice:not(.disabled)');
                         if (firstAvailable) {
-                            firstAvailable.classList.add('selected');
-                            document.getElementById('colorName').textContent = firstAvailable.getAttribute('title') || firstAvailable.dataset.color;
+                            selectColor(firstAvailable);
                         }
                     }
                 } else {
@@ -1110,7 +1109,7 @@
                 const thumbsContainer = document.getElementById('thumbnails');
                 if (images.length > 1) {
                     thumbsContainer.innerHTML = images.map((src, idx) => {
-                        const isVideo = src.startsWith('data:video') || src.endsWith('.mp4') || src.endsWith('.webm');
+                        const isVideo = src.startsWith('data:video') || src.endsWith('.mp4') || src.endsWith('.webm') || src.includes('video');
                         const content = isVideo
                             ? `<div style="width:100%;height:100%;background:#000;display:flex;align-items:center;justify-content:center;color:white;"><span class="material-icons-outlined" style="font-size:1rem;">videocam</span></div>`
                             : `<img src="${src}" alt="">`;
@@ -1145,6 +1144,9 @@
                         <div class="size-btn" onclick="selectSize(this)" data-size="${s.size_number}" data-size-id="${s.id}">${s.size_number}</div>
                     `).join('');
                     if (sizeGrid.firstElementChild) selectSize(sizeGrid.firstElementChild);
+                } else if (p.colors && p.colors.length > 0) {
+                    // If no sizes but colors exist, trigger color selection explicitly to link images
+                    selectColor(document.querySelector('.color-choice'));
                 }
 
                 // Wilayas for Quick Order

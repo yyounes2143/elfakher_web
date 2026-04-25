@@ -2428,6 +2428,58 @@
                     productImages = p.images || [];
                     renderImages('edit');
 
+                    // Set up Image Color Linking
+                    isImageColorLinkingEnabled = p.image_color_linking_enabled || false;
+                    const editLinkCheckbox = document.getElementById('editLinkImagesColorCheckbox');
+                    if (editLinkCheckbox) {
+                        editLinkCheckbox.checked = isImageColorLinkingEnabled;
+                        const container = document.getElementById('editImageColorLinkingContainer');
+                        if (container) container.classList.toggle('active', isImageColorLinkingEnabled);
+                    }
+
+                    // Reconstruct imageColorLinks from productImages
+                    imageColorLinks = [];
+                    if (isImageColorLinkingEnabled && productImages.length > 0) {
+                        const linksMap = new Map(); // colorId -> { colorName, colorHex, imageIndices: [] }
+
+                        productImages.forEach((img, idx) => {
+                            if (typeof img === 'object' && img !== null && img.colorId) {
+                                if (!linksMap.has(img.colorId)) {
+                                    // Try to find hex from product colors
+                                    const prodColor = p.colors ? p.colors.find(c => c.id === img.colorId) : null;
+                                    linksMap.set(img.colorId, {
+                                        colorId: img.colorId,
+                                        colorName: img.color || (prodColor ? prodColor.name_ar : '-'),
+                                        colorHex: prodColor ? prodColor.hex_code : '',
+                                        imageIndices: []
+                                    });
+                                }
+                                linksMap.get(img.colorId).imageIndices.push(idx);
+                            }
+                        });
+
+                        imageColorLinks = Array.from(linksMap.values());
+                    }
+                    renderImageColorLinks();
+
+                    // Reconstruct Smart Inventory (Size-Color availability)
+                    if (p.size_color_availability && Object.keys(p.size_color_availability).length > 0) {
+                        const smartInvCheckbox = document.getElementById('editSmartInventoryCheckbox');
+                        if (smartInvCheckbox) {
+                            smartInvCheckbox.checked = true;
+                            document.getElementById('editSmartInventoryContainer').classList.add('active');
+                            smartInventoryData = p.size_color_availability;
+                        }
+                    } else {
+                        const smartInvCheckbox = document.getElementById('editSmartInventoryCheckbox');
+                        if (smartInvCheckbox) {
+                            smartInvCheckbox.checked = false;
+                            document.getElementById('editSmartInventoryContainer').classList.remove('active');
+                            smartInventoryData = {};
+                        }
+                    }
+                    renderSmartInventory('edit');
+
                     openModal('editProductModal');
                 }
             } catch (err) {
@@ -2974,6 +3026,27 @@
                 };
             });
 
+            const smartInventoryEnabled = document.getElementById('editSmartInventoryCheckbox')?.checked;
+            const imageColorLinkingEnabled = document.getElementById('editLinkImagesColorCheckbox')?.checked;
+
+            let imagesToSave = productImages;
+            if (imageColorLinkingEnabled && imageColorLinks.length > 0) {
+                imagesToSave = productImages.map((img, idx) => {
+                    const imgUrl = typeof img === 'string' ? img : img.url;
+                    const linkedColor = imageColorLinks.find(link => link.imageIndices.includes(idx));
+                    return {
+                        url: imgUrl,
+                        color: linkedColor ? linkedColor.colorName : null,
+                        colorId: linkedColor ? linkedColor.colorId : null
+                    };
+                });
+            } else {
+                // If linking disabled, ensure images are saved cleanly without legacy link properties if not desired.
+                imagesToSave = productImages.map((img) => {
+                    return typeof img === 'string' ? img : { url: img.url };
+                });
+            }
+
             const payload = {
                 name_ar: document.getElementById('editName').value,
                 category_ids: selectedCategories,
@@ -2985,10 +3058,12 @@
                 stock_quantity: parseInt(document.getElementById('editStock').value) || 0,
                 status: document.getElementById('editStatus').value,
                 is_featured: document.getElementById('editFeatured').value === 'yes',
-                images: productImages,
+                images: imagesToSave,
                 size_ids: sizes,
                 color_ids: colors.map(c => c.id),
-                colors: colors
+                colors: colors,
+                size_color_availability: smartInventoryEnabled ? smartInventoryData : null,
+                image_color_linking_enabled: imageColorLinkingEnabled
             };
 
             console.log('🚀 Updating Product:', payload);
