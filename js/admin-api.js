@@ -777,7 +777,7 @@ async function viewOrder(id) {
 
     } catch (error) {
         console.error('Error viewing order:', error);
-        alert('فشل في تحميل تفاصيل الطلب'); // Fallback alert
+        showNotification('فشل في تحميل تفاصيل الطلب', 'error'); // Fallback alert
     }
 }
 
@@ -858,7 +858,7 @@ async function updateOrderStatus(idOrStatus, status) {
     }
 
     if (!id) {
-        alert('خطأ: لم يتم تحديد الطلب');
+        showNotification('خطأ: لم يتم تحديد الطلب', 'error');
         return;
     }
 
@@ -875,7 +875,7 @@ async function updateOrderStatus(idOrStatus, status) {
         await api.updateOrderStatus(id, status);
 
         // Show success
-        // alert('تم تحديث الحالة بنجاح');
+        // showNotification('تم تحديث الحالة بنجاح', 'success');
 
         // Refresh modal data to update timeline etc
         viewOrder(id);
@@ -885,7 +885,7 @@ async function updateOrderStatus(idOrStatus, status) {
 
     } catch (error) {
         console.error('Error updating status:', error);
-        alert('فشل في تحديث الحالة: ' + error.message);
+        showNotification('فشل في تحديث الحالة: ' + error.message, 'error');
     }
 }
 
@@ -918,7 +918,7 @@ async function saveOrderNotes(id) {
 
     } catch (error) {
         console.error('Error saving notes:', error);
-        alert('فشل في حفظ الملاحظات: ' + error.message);
+        showNotification('فشل في حفظ الملاحظات: ' + error.message, 'error');
         if (btn) {
             btn.innerHTML = '<span class="material-icons-outlined">save</span> حفظ';
             btn.disabled = false;
@@ -932,7 +932,7 @@ async function saveOrderNotes(id) {
 function editProduct(id) {
     // TODO: Implement edit modal
     console.log('Edit product:', id);
-    alert('جاري فتح نافذة التعديل...');
+    showNotification('جاري فتح نافذة التعديل...', 'info');
 }
 
 /**
@@ -955,7 +955,7 @@ async function removeOrderItem(orderId, itemId) {
 
     } catch (error) {
         console.error('Error deleting item:', error);
-        alert('فشل في حذف المنتج: ' + error.message);
+        showNotification('فشل في حذف المنتج: ' + error.message, 'error');
     }
 }
 

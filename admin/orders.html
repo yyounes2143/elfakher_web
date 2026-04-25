@@ -1218,11 +1218,11 @@
             const selectedOption = productSelect.options[productSelect.selectedIndex];
 
             if (!firstName || !lastName || !phone || !wilaya) {
-                alert('الرجاء ملء جميع حقول العميل المطلوبة');
+                showNotification('الرجاء ملء جميع حقول العميل المطلوبة', 'warning');
                 return;
             }
             if (!productSelect.value) {
-                alert('الرجاء اختيار منتج');
+                showNotification('الرجاء اختيار منتج', 'warning');
                 return;
             }
 

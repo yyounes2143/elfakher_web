@@ -374,84 +374,7 @@
         }
 
         /* ========== Toast Notifications ========== */
-        .toast-container {
-            position: fixed;
-            top: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            pointer-events: none;
-        }
 
-        .toast {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.875rem 1.25rem;
-            border-radius: 0.75rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            pointer-events: auto;
-            animation: toastIn 0.4s cubic-bezier(.4, 0, .2, 1) both;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            min-width: 280px;
-        }
-
-        .toast.toast-out {
-            animation: toastOut 0.3s ease both;
-        }
-
-        .toast-success {
-            background: #064E3B;
-            color: #D1FAE5;
-        }
-
-        .toast-error {
-            background: #7F1D1D;
-            color: #FEE2E2;
-        }
-
-        .toast-close {
-            margin-right: auto;
-            background: none;
-            border: none;
-            color: inherit;
-            opacity: 0.7;
-            cursor: pointer;
-            padding: 0.25rem;
-            display: flex;
-        }
-
-        .toast-close:hover {
-            opacity: 1;
-        }
-
-        @keyframes toastIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes toastOut {
-            from {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-            to {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-        }
 
         /* ========== Empty State ========== */
         .empty-state {
@@ -1928,34 +1851,9 @@
 
         // ========== Toast Notification System ==========
         function ensureToastContainer() {
-            if (!document.getElementById('toastContainer')) {
-                const c = document.createElement('div');
-                c.id = 'toastContainer';
-                c.className = 'toast-container';
-                document.body.appendChild(c);
-            }
+
         }
-        function showToast(message, type = 'success') {
-            ensureToastContainer();
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            const icon = type === 'success' ? 'check_circle' : 'error';
-            toast.innerHTML = `
-                <span class="material-icons-outlined" style="font-size:1.25rem;">${icon}</span>
-                <span>${message}</span>
-                <button class="toast-close" onclick="this.parentElement.classList.add('toast-out');setTimeout(()=>this.parentElement.remove(),300)">
-                    <span class="material-icons-outlined" style="font-size:1rem;">close</span>
-                </button>
-            `;
-            container.appendChild(toast);
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.classList.add('toast-out');
-                    setTimeout(() => toast.remove(), 300);
-                }
-            }, 3500);
-        }
+
 
         // ========== Auth Fetch Helper ==========
         function getAuthHeaders() {
@@ -2100,7 +1998,7 @@
             const hex = document.getElementById('customColorHex').value;
 
             if (!name) {
-                showToast('الرجاء إدخال اسم اللون', 'error');
+                showNotification('الرجاء إدخال اسم اللون', 'error');
                 return;
             }
 
@@ -2484,7 +2382,7 @@
                 }
             } catch (err) {
                 console.error('Error fetching product details', err);
-                showToast('فشل في جلب بيانات المنتج', 'error');
+                showNotification('فشل في جلب بيانات المنتج', 'error');
             }
         }
 
@@ -2586,7 +2484,7 @@
             if (!files || files.length === 0) return;
             Array.from(files).forEach(file => {
                 if (file.size > 2 * 1024 * 1024) {
-                    showToast('حجم الصورة يتجاوز 2MB', 'error');
+                    showNotification('حجم الصورة يتجاوز 2MB', 'error');
                     return;
                 }
                 const reader = new FileReader();
@@ -2615,7 +2513,7 @@
             const name = nameInput.value.trim();
 
             if (!name) {
-                showToast('الرجاء كتابة اسم للون', 'error');
+                showNotification('الرجاء كتابة اسم للون', 'error');
                 return;
             }
 
@@ -2640,7 +2538,7 @@
             nameInput.value = '';
             hexInput.value = '#000000';
             updateSmartInventory();
-            showToast('تم إضافة اللون بنجاح');
+            showNotification('تم إضافة اللون بنجاح');
         }
 
         function removeCustomColor(btn) {
@@ -2718,11 +2616,11 @@
         function addNewColorImageLink() {
             const colors = getAvailableColors();
             if (colors.length === 0) {
-                showToast('الرجاء اختيار ألوان للمنتج أولاً', 'error');
+                showNotification('الرجاء اختيار ألوان للمنتج أولاً', 'error');
                 return;
             }
             if (productImages.length === 0) {
-                showToast('الرجاء رفع صور للمنتج أولاً', 'error');
+                showNotification('الرجاء رفع صور للمنتج أولاً', 'error');
                 return;
             }
             // Add empty link
@@ -2913,7 +2811,7 @@
             const price = form.querySelector('[name="price"]').value;
 
             if (!name || !price) {
-                showToast('الرجاء إدخال اسم المنتج والسعر', 'error');
+                showNotification('الرجاء إدخال اسم المنتج والسعر', 'error');
                 return;
             }
 
@@ -2985,16 +2883,16 @@
                 console.log('🔙 API Response:', data);
 
                 if (data.success) {
-                    showToast('تم إضافة المنتج بنجاح');
+                    showNotification('تم إضافة المنتج بنجاح');
                     closeModal('addProductModal');
                     loadProducts();
                     loadProductStats();
                 } else {
-                    showToast('خطأ: ' + data.message, 'error');
+                    showNotification('خطأ: ' + data.message, 'error');
                 }
             } catch (err) {
                 console.error(err);
-                showToast('حدث خطأ أثناء الحفظ', 'error');
+                showNotification('حدث خطأ أثناء الحفظ', 'error');
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = originalText;
@@ -3080,16 +2978,16 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    showToast('تم تحديث المنتج بنجاح');
+                    showNotification('تم تحديث المنتج بنجاح');
                     closeModal('editProductModal');
                     loadProducts();
                     loadProductStats();
                 } else {
-                    showToast('خطأ: ' + data.message, 'error');
+                    showNotification('خطأ: ' + data.message, 'error');
                 }
             } catch (err) {
                 console.error(err);
-                showToast('حدث خطأ أثناء التحديث', 'error');
+                showNotification('حدث خطأ أثناء التحديث', 'error');
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = originalText;
@@ -3104,15 +3002,15 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    showToast('تم حذف المنتج بنجاح');
+                    showNotification('تم حذف المنتج بنجاح');
                     loadProducts(); // Refresh
                     loadProductStats(); // Update stats
                 } else {
-                    showToast('خطأ: ' + data.message, 'error');
+                    showNotification('خطأ: ' + data.message, 'error');
                 }
             } catch (err) {
                 console.error(err);
-                showToast('حدث خطأ أثناء الحذف', 'error');
+                showNotification('حدث خطأ أثناء الحذف', 'error');
             }
         }
 

@@ -551,7 +551,7 @@
                 const cart = JSON.parse(localStorage.getItem('elfakher_cart') || '[]');
 
                 if (cart.length === 0) {
-                    alert('السلة فارغة!');
+                    showNotification('السلة فارغة!', 'warning');
                     return;
                 }
 
@@ -582,7 +582,7 @@
                         localStorage.removeItem('elfakher_cart');
 
                         // Show success
-                        alert(`تم إنشاء طلبك بنجاح!\n\nرقم الطلب: ${result.data.orderNumber}\n\nسنتواصل معك قريباً للتأكيد.`);
+                        showNotification(`تم إنشاء طلبك بنجاح!\n\nرقم الطلب: ${result.data.orderNumber}\n\nسنتواصل معك قريباً للتأكيد.`, 'success');
 
                         // Redirect to home
                         window.location.href = 'index.html';
