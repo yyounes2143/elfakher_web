@@ -16,23 +16,38 @@ async function seedColors() {
     try {
         console.log('🌱 Starting color seeding...');
 
-        for (const color of colors) {
-            // Check if color exists by hex or name
-            const check = await pool.query(
-                'SELECT id FROM catalog.colors WHERE hex_code = $1 OR name_en = $2',
-                [color.hex_code, color.name_en]
-            );
+        if (colors.length === 0) {
+            console.log('No colors to seed.');
+            process.exit(0);
+        }
 
-            if (check.rows.length === 0) {
-                console.log(`Adding new color: ${color.name_en}`);
-                await pool.query(
-                    `INSERT INTO catalog.colors (name_en, name_ar, hex_code, sort_order, is_active)
-                     VALUES ($1, $2, $3, $4, true)`,
-                    [color.name_en, color.name_ar, color.hex_code, color.sort_order]
-                );
-            } else {
-                console.log(`Color already exists: ${color.name_en} (ID: ${check.rows[0].id})`);
-            }
+        const values = [];
+        const params = [];
+
+        colors.forEach((color, i) => {
+            const offset = i * 4;
+            values.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, true)`);
+            params.push(color.name_en, color.name_ar, color.hex_code, color.sort_order);
+        });
+
+        const queryText = `
+            INSERT INTO catalog.colors (name_en, name_ar, hex_code, sort_order, is_active)
+            VALUES ${values.join(', ')}
+            ON CONFLICT (hex_code) DO NOTHING
+            RETURNING id, name_en;
+        `;
+
+        const result = await pool.query(queryText, params);
+
+        if (result.rows.length > 0) {
+            result.rows.forEach(row => {
+                console.log(`Added new color: ${row.name_en} (ID: ${row.id})`);
+            });
+        }
+
+        const skippedCount = colors.length - result.rows.length;
+        if (skippedCount > 0) {
+            console.log(`Skipped ${skippedCount} existing colors.`);
         }
 
         console.log('✅ Color seeding completed!');

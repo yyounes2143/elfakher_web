@@ -42,7 +42,7 @@ CREATE TABLE catalog.colors (
     
     name_ar VARCHAR(50) NOT NULL,
     name_en VARCHAR(50),
-    hex_code CHAR(7) NOT NULL, -- #FFFFFF
+    hex_code CHAR(7) UNIQUE NOT NULL, -- #FFFFFF
     
     is_active BOOLEAN DEFAULT true,
     sort_order INTEGER DEFAULT 0,
