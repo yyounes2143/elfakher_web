@@ -542,7 +542,7 @@ function handleAddToCart() {
     }
 
     const mainImg = document.getElementById('mainImage')?.src || '';
-    const image = mainImg.length > 200 ? '' : mainImg;
+    const image = mainImg.length > 2000 ? '' : mainImg;
 
     // Check for custom measurements
     const customMeasurements = {};
