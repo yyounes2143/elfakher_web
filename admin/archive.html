@@ -41,6 +41,7 @@
             border-radius: 1rem;
             box-shadow: var(--shadow-glass);
             padding: 1.5rem;
+            overflow: visible; /* Allow shadows to render outside if needed */
         }
 
 
@@ -217,6 +218,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+                position: relative;
+                z-index: 1;
             gap: 0.75rem;
             width: 100px;
         }
@@ -231,20 +234,38 @@
             align-items: center;
             justify-content: center;
             color: var(--admin-muted);
+            flex-shrink: 0;
+            box-sizing: border-box;
+            background: #ffffff; /* Explicit background to cover the line underneath */
             transition: all 0.3s;
+        }
+
+        .dark .step-icon {
+            background: #1A232E; /* Match dark mode surface background to cover the line */
         }
 
         .step-item.completed .step-icon {
             background: var(--admin-accent);
             border-color: var(--admin-accent);
             color: white;
-            box-shadow: 0 0 15px rgba(193, 154, 91, 0.4);
+            box-shadow: 0 4px 15px rgba(193, 154, 91, 0.4);
+            outline: 3px solid var(--admin-surface); /* Replaces background gap correctly with surface color */
+        }
+
+        .dark .step-item.completed .step-icon {
+            background: var(--admin-accent); /* Override dark mode default for completed */
         }
 
         .step-item.active .step-icon {
             border-color: var(--admin-accent);
             color: var(--admin-accent);
             border-width: 3px;
+            box-shadow: 0 4px 15px rgba(193, 154, 91, 0.2);
+            outline: 3px solid var(--admin-surface);
+        }
+
+        .dark .step-item.active .step-icon {
+            background: #1A232E; /* Keep dark background for active */
         }
 
         .step-label {
@@ -280,8 +301,8 @@
                 flex-direction: column; 
                 gap: 2rem; 
                 align-items: flex-start; 
-                padding-right: 1rem;
-                padding-left: 1rem;
+                padding-right: 0.5rem;
+                padding-left: 0.5rem;
             }
             .stepper-line { 
                 width: 4px; 
@@ -289,7 +310,7 @@
                 bottom: auto;
                 top: 24px; 
                 left: auto; 
-                right: calc(1rem + 24px - 2px);
+                right: calc(0.5rem + 24px - 2px); /* Re-add 0.5rem padding + half icon - half line */
             }
             .stepper-progress {
                 width: 100% !important;
@@ -299,13 +320,16 @@
             .step-item { 
                 flex-direction: row; 
                 width: 100%; 
+                justify-content: flex-start; /* Ensure items align from the right in RTL */
                 gap: 1.5rem;
                 align-items: center;
+                position: relative;
+                z-index: 1;
             }
             .step-item > div {
                 display: flex;
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: flex-start; /* Correct for RTL */
             }
             .step-label, .step-date { text-align: right; }
         }
@@ -599,7 +623,7 @@
             }
 
             const stepperHTML = `
-                <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
+                <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem; overflow: visible; z-index: 2; position: relative;">
                     <h3 style="margin-bottom: 1.5rem; font-size: 1.125rem;">المدار الزمني للطلب</h3>
                     <div class="stepper-container">
                         <div class="stepper-line">
