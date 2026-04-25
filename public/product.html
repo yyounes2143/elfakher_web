@@ -723,14 +723,7 @@
                 <p class="product-desc" id="productDesc"></p>
 
                 <!-- 1. Colors -->
-                <div class="option-section" id="colorsSection" style="display:none;">
-                    <div class="option-header">
-                        <span class="option-step">1</span>
-                        <span class="option-title">اختر اللون</span>
-                        <span class="option-selected">اللون: <strong id="colorName">-</strong></span>
-                    </div>
-                    <div class="color-options" id="colorOptions"></div>
-                </div>
+                <!-- Color Strip Removed -->
 
                 <!-- 2. Sizes -->
                 <div class="option-section" id="sizesSection" style="display:none;">
@@ -835,12 +828,70 @@
         // ===== IMAGE GALLERY =====
         window.currentImageIndex = 0;
 
+        window.currentActiveColorId = null;
+        window.currentActiveColorName = null;
+
+        function updateCartButtonState() {
+            const addBtn = document.getElementById('addToCartBtn');
+            const qtyDisp = document.getElementById('qtyDisplay');
+            if (!addBtn) return;
+
+            const selectedSizeEl = document.querySelector('.size-btn.selected');
+            const sizeId = selectedSizeEl ? selectedSizeEl.dataset.sizeId : null;
+            const colorId = window.currentActiveColorId;
+
+            if (window.productStatus === 'out_of_stock') {
+                qtyDisp.textContent = 'نفذت الكمية';
+                addBtn.disabled = true;
+                addBtn.innerHTML = '<span class="material-icons-outlined">block</span> غير متاح حالياً';
+                return;
+            }
+
+            if (sizeId && colorId && window.sizeColorAvailability) {
+                const availableColorsForSize = window.sizeColorAvailability[sizeId];
+                if (availableColorsForSize && availableColorsForSize.length > 0 && !availableColorsForSize.includes(colorId)) {
+                    qtyDisp.textContent = 'غير متوفر بهذا القياس واللون';
+                    addBtn.disabled = true;
+                    addBtn.innerHTML = '<span class="material-icons-outlined">block</span> عذراً، هذا المزيج غير متوفر';
+                    return;
+                }
+            }
+
+            qtyDisp.textContent = 'متوفر';
+            addBtn.disabled = false;
+            addBtn.innerHTML = '<span class="material-icons-outlined">shopping_cart</span> أضف إلى السلة';
+        }
+
         window.changeImage = function(el, src, index) {
             document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
             if (el) el.classList.add('active');
             if (index !== undefined) {
                 window.currentImageIndex = index;
+                const imgObj = window.productImages[index];
+                if (imgObj && typeof imgObj !== 'string' && imgObj.colorId) {
+                    window.currentActiveColorId = imgObj.colorId;
+                    window.currentActiveColorName = imgObj.color || '-';
+
+                    // Dim sizes not available for this color
+                    if (window.sizeColorAvailability) {
+                        document.querySelectorAll('.size-btn').forEach(sizeEl => {
+                            const sId = sizeEl.dataset.sizeId;
+                            const availableColors = window.sizeColorAvailability[sId];
+                            if (availableColors && availableColors.length > 0 && !availableColors.includes(imgObj.colorId)) {
+                                sizeEl.style.opacity = '0.3';
+                            } else {
+                                sizeEl.style.opacity = '1';
+                            }
+                        });
+                    }
+                } else {
+                    window.currentActiveColorId = null;
+                    window.currentActiveColorName = null;
+                    // Reset size opacities
+                    document.querySelectorAll('.size-btn').forEach(sizeEl => sizeEl.style.opacity = '1');
+                }
             }
+            updateCartButtonState();
             renderMainMedia(src);
         };
 
@@ -905,42 +956,6 @@
             }
         }
 
-        // ===== SELECT COLOR =====
-        window.selectColor = function(el) {
-            document.querySelectorAll('.color-choice').forEach(c => c.classList.remove('selected'));
-            el.classList.add('selected');
-            const name = el.getAttribute('title') || el.dataset.color || '-';
-            document.getElementById('colorName').textContent = name;
-
-            // Image-color linking logic: highlight matching images, dim others, and don't reconstruct the whole DOM
-            if (window.imageColorLinkingEnabled && window.productImages && window.productImages.length > 0) {
-                const colorId = el.dataset.colorId;
-                const thumbnails = document.querySelectorAll('.thumbnail');
-                let firstMatchingUrl = null;
-                let firstMatchingIndex = -1;
-
-                window.productImages.forEach((img, idx) => {
-                    const isMatch = typeof img === 'string' || !img.colorId || img.colorId === colorId;
-                    if (isMatch && firstMatchingIndex === -1) {
-                        firstMatchingIndex = idx;
-                        firstMatchingUrl = typeof img === 'string' ? img : img.url;
-                    }
-
-                    if (thumbnails[idx]) {
-                        if (isMatch) {
-                            thumbnails[idx].style.opacity = '1';
-                        } else {
-                            thumbnails[idx].style.opacity = '0.3';
-                        }
-                    }
-                });
-
-                if (firstMatchingUrl && firstMatchingIndex !== -1) {
-                    changeImage(thumbnails[firstMatchingIndex], firstMatchingUrl, firstMatchingIndex);
-                }
-            }
-        };
-
         // ===== SELECT SIZE =====
         window.selectSize = function(el) {
             document.querySelectorAll('.size-btn').forEach(s => s.classList.remove('selected'));
@@ -952,25 +967,19 @@
             const availableColorsForSize = availability[sizeId];
             const hasMapping = availableColorsForSize && availableColorsForSize.length > 0;
 
-            document.querySelectorAll('.color-choice').forEach(colorEl => {
-                const colorId = colorEl.dataset.colorId;
-                if (hasMapping && !availableColorsForSize.includes(colorId)) {
-                    colorEl.classList.add('disabled');
-                    colorEl.style.opacity = '0.3';
-                    colorEl.style.pointerEvents = 'none';
-                    if (colorEl.classList.contains('selected')) {
-                        colorEl.classList.remove('selected');
-                        const firstAvailable = document.querySelector('.color-choice:not(.disabled)');
-                        if (firstAvailable) {
-                            selectColor(firstAvailable);
-                        }
+            // Dim thumbnails that do not belong to the available colors for this size
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            window.productImages.forEach((img, idx) => {
+                if (thumbnails[idx]) {
+                    if (hasMapping && typeof img === 'object' && img.colorId && !availableColorsForSize.includes(img.colorId)) {
+                        thumbnails[idx].style.opacity = '0.3';
+                    } else {
+                        thumbnails[idx].style.opacity = '1';
                     }
-                } else {
-                    colorEl.classList.remove('disabled');
-                    colorEl.style.opacity = '1';
-                    colorEl.style.pointerEvents = 'auto';
                 }
             });
+
+            updateCartButtonState();
         };
 
         // ===== QUANTITY =====
@@ -1171,21 +1180,15 @@
                     }).join('');
                 } else { thumbsContainer.style.display = 'none'; }
 
-                // Colors
                 window.sizeColorAvailability = p.size_color_availability || {};
                 window.productColors = p.colors || [];
-                const colorsSection = document.getElementById('colorsSection');
-                const colorOptions = document.getElementById('colorOptions');
-                if (p.colors && p.colors.length > 0) {
-                    colorsSection.style.display = 'block';
-                    colorOptions.innerHTML = p.colors.map((c, idx) => `
-                        <div class="color-choice ${idx === 0 ? 'selected' : ''}"
-                             onclick="selectColor(this)"
-                             data-color="${c.name_ar}" data-color-id="${c.id}"
-                             style="background:${c.hex_code};"
-                             title="${c.name_ar}"></div>
-                    `).join('');
-                    document.getElementById('colorName').textContent = p.colors[0].name_ar;
+                window.productStatus = p.status || 'active';
+
+                // We trigger the first image to set initial color state
+                if (window.productImages && window.productImages.length > 0) {
+                    const firstThumb = document.querySelector('.thumbnail');
+                    const src = typeof window.productImages[0] === 'string' ? window.productImages[0] : window.productImages[0].url;
+                    changeImage(firstThumb, src, 0);
                 }
 
                 // Sizes
@@ -1198,9 +1201,6 @@
                         <div class="size-btn" onclick="selectSize(this)" data-size="${s.size_number}" data-size-id="${s.id}">${s.size_number}</div>
                     `).join('');
                     if (sizeGrid.firstElementChild) selectSize(sizeGrid.firstElementChild);
-                } else if (p.colors && p.colors.length > 0) {
-                    // If no sizes but colors exist, trigger color selection explicitly to link images
-                    selectColor(document.querySelector('.color-choice'));
                 }
 
                 // Wilayas for Quick Order
