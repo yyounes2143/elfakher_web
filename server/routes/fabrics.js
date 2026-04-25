@@ -89,8 +89,6 @@ router.get('/stats', async (req, res) => {
 });
 
 // ===============================================
-// GET /api/fabrics/colors - قائمة الألوان
-// ===============================================
 router.get('/colors', async (req, res) => {
     try {
         const { include_inactive } = req.query;

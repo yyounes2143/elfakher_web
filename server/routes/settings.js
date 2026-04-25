@@ -133,7 +133,7 @@ router.get('/tailoring/options', async (req, res) => {
             db.query(`SELECT * FROM catalog.sleeve_types WHERE is_active = true ORDER BY name_ar`),
             db.query(`SELECT * FROM catalog.button_types WHERE is_active = true ORDER BY name_ar`),
             db.query(`SELECT * FROM catalog.standard_sizes ORDER BY id`),
-            db.query(`SELECT * FROM catalog.colors WHERE is_active = true ORDER BY sort_order`)
+            Promise.resolve({rows: []})
         ]);
 
         res.json({

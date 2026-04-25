@@ -827,18 +827,36 @@
 
         // ===== IMAGE GALLERY =====
         window.currentImageIndex = 0;
-
-        window.currentActiveColorId = null;
-        window.currentActiveColorName = null;
+        window.currentImagePrice = null;
+        window.currentImageSizes = [];
 
         function updateCartButtonState() {
             const addBtn = document.getElementById('addToCartBtn');
             const qtyDisp = document.getElementById('qtyDisplay');
+            const priceEl = document.getElementById('productPrice');
+            const oldPriceEl = document.getElementById('productPriceOld');
+            const discEl = document.getElementById('productDiscount');
+
             if (!addBtn) return;
+
+            // Update Price Display
+            if (window.currentImagePrice) {
+                priceEl.textContent = formatProductPrice(window.currentImagePrice);
+                oldPriceEl.style.display = 'none';
+                discEl.style.display = 'none';
+                window.productPrice = parseFloat(window.currentImagePrice);
+            } else {
+                priceEl.textContent = formatProductPrice(window.baseProductPrice);
+                if (window.oldProductPrice) {
+                    oldPriceEl.textContent = formatProductPrice(window.oldProductPrice);
+                    oldPriceEl.style.display = 'inline';
+                    discEl.style.display = 'inline';
+                }
+                window.productPrice = parseFloat(window.baseProductPrice);
+            }
 
             const selectedSizeEl = document.querySelector('.size-btn.selected');
             const sizeId = selectedSizeEl ? selectedSizeEl.dataset.sizeId : null;
-            const colorId = window.currentActiveColorId;
 
             if (window.productStatus === 'out_of_stock') {
                 qtyDisp.textContent = 'نفذت الكمية';
@@ -847,12 +865,11 @@
                 return;
             }
 
-            if (sizeId && colorId && window.sizeColorAvailability) {
-                const availableColorsForSize = window.sizeColorAvailability[sizeId];
-                if (availableColorsForSize && availableColorsForSize.length > 0 && !availableColorsForSize.includes(colorId)) {
-                    qtyDisp.textContent = 'غير متوفر بهذا القياس واللون';
+            if (sizeId && window.currentImageSizes && window.currentImageSizes.length > 0) {
+                if (!window.currentImageSizes.includes(sizeId)) {
+                    qtyDisp.textContent = 'غير متوفر بهذا القياس للمظهر الحالي';
                     addBtn.disabled = true;
-                    addBtn.innerHTML = '<span class="material-icons-outlined">block</span> عذراً، هذا المزيج غير متوفر';
+                    addBtn.innerHTML = '<span class="material-icons-outlined">block</span> عذراً، المظهر غير متوفر بالقياس';
                     return;
                 }
             }
@@ -868,26 +885,22 @@
             if (index !== undefined) {
                 window.currentImageIndex = index;
                 const imgObj = window.productImages[index];
-                if (imgObj && typeof imgObj !== 'string' && imgObj.colorId) {
-                    window.currentActiveColorId = imgObj.colorId;
-                    window.currentActiveColorName = imgObj.color || '-';
+                if (imgObj && typeof imgObj !== 'string') {
+                    window.currentImageSizes = imgObj.sizes || [];
+                    window.currentImagePrice = imgObj.price || null;
 
-                    // Dim sizes not available for this color
-                    if (window.sizeColorAvailability) {
-                        document.querySelectorAll('.size-btn').forEach(sizeEl => {
-                            const sId = sizeEl.dataset.sizeId;
-                            const availableColors = window.sizeColorAvailability[sId];
-                            if (availableColors && availableColors.length > 0 && !availableColors.includes(imgObj.colorId)) {
-                                sizeEl.style.opacity = '0.3';
-                            } else {
-                                sizeEl.style.opacity = '1';
-                            }
-                        });
-                    }
+                    // Dim sizes not available for this image
+                    document.querySelectorAll('.size-btn').forEach(sizeEl => {
+                        const sId = sizeEl.dataset.sizeId;
+                        if (window.currentImageSizes.length > 0 && !window.currentImageSizes.includes(sId)) {
+                            sizeEl.style.opacity = '0.3';
+                        } else {
+                            sizeEl.style.opacity = '1';
+                        }
+                    });
                 } else {
-                    window.currentActiveColorId = null;
-                    window.currentActiveColorName = null;
-                    // Reset size opacities
+                    window.currentImageSizes = [];
+                    window.currentImagePrice = null;
                     document.querySelectorAll('.size-btn').forEach(sizeEl => sizeEl.style.opacity = '1');
                 }
             }
@@ -963,15 +976,12 @@
             document.getElementById('sizeName').textContent = el.dataset.size;
 
             const sizeId = el.dataset.sizeId;
-            const availability = window.sizeColorAvailability || {};
-            const availableColorsForSize = availability[sizeId];
-            const hasMapping = availableColorsForSize && availableColorsForSize.length > 0;
 
-            // Dim thumbnails that do not belong to the available colors for this size
+            // Dim thumbnails that do not map to the selected size
             const thumbnails = document.querySelectorAll('.thumbnail');
             window.productImages.forEach((img, idx) => {
                 if (thumbnails[idx]) {
-                    if (hasMapping && typeof img === 'object' && img.colorId && !availableColorsForSize.includes(img.colorId)) {
+                    if (typeof img === 'object' && img.sizes && img.sizes.length > 0 && !img.sizes.includes(sizeId)) {
                         thumbnails[idx].style.opacity = '0.3';
                     } else {
                         thumbnails[idx].style.opacity = '1';
@@ -996,9 +1006,7 @@
             const id = params.get('id');
             const qty = parseInt(document.getElementById('qtyInput').value) || 1;
 
-            const colorEl = document.querySelector('.color-choice.selected');
             const sizeEl = document.querySelector('.size-btn.selected');
-            const color = colorEl ? (colorEl.getAttribute('title') || colorEl.dataset.color) : null;
             let size = sizeEl ? sizeEl.dataset.size : null;
 
             if (!size) { alert('الرجاء اختيار المقاس'); return; }
@@ -1010,7 +1018,7 @@
 
             const item = {
                 productId: id, title, price, image, quantity: qty,
-                color, size,
+                size,
                 collar: document.querySelector('input[name="collar"]:checked')?.value || null,
                 button: document.querySelector('input[name="button"]:checked')?.value || null,
                 sleeve: document.querySelector('input[name="sleeve"]:checked')?.value || null
@@ -1019,9 +1027,8 @@
             const cartKey = 'elfakher_cart';
             let cartData = JSON.parse(localStorage.getItem(cartKey) || '[]');
             const existIdx = cartData.findIndex(i =>
-                i.productId === item.productId && i.color === item.color &&
-                i.size === item.size && i.collar === item.collar &&
-                i.button === item.button && i.sleeve === item.sleeve
+                i.productId === item.productId && i.size === item.size && i.image === item.image &&
+                i.collar === item.collar && i.button === item.button && i.sleeve === item.sleeve
             );
 
             if (existIdx > -1) { cartData[existIdx].quantity += item.quantity; }
@@ -1133,10 +1140,13 @@
 
                 // Price
                 const currentPrice = p.sale_price || p.base_price;
-                window.productPrice = parseFloat(currentPrice) || 0;
+                window.baseProductPrice = parseFloat(currentPrice) || 0;
+                window.oldProductPrice = (p.sale_price && p.sale_price < p.base_price) ? parseFloat(p.base_price) : null;
+                window.productPrice = window.baseProductPrice;
+
                 document.getElementById('productPrice').textContent = formatProductPrice(currentPrice);
-                if (p.sale_price && p.sale_price < p.base_price) {
-                    document.getElementById('productPriceOld').textContent = formatProductPrice(p.base_price);
+                if (window.oldProductPrice) {
+                    document.getElementById('productPriceOld').textContent = formatProductPrice(window.oldProductPrice);
                     document.getElementById('productPriceOld').style.display = 'inline';
                     const disc = Math.round((1 - p.sale_price / p.base_price) * 100);
                     document.getElementById('productDiscount').textContent = `-${disc}%`;
@@ -1180,8 +1190,6 @@
                     }).join('');
                 } else { thumbsContainer.style.display = 'none'; }
 
-                window.sizeColorAvailability = p.size_color_availability || {};
-                window.productColors = p.colors || [];
                 window.productStatus = p.status || 'active';
 
                 // We trigger the first image to set initial color state

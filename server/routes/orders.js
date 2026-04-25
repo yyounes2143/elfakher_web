@@ -235,13 +235,12 @@ router.get('/:id', authMiddleware, async (req, res) => {
                 p.name_ar as product_name,
                 p.images->>0 as image_url,
                 f.name_ar as fabric_name,
-                COALESCE(c.name_ar, oi.color_name) as color_name,
                 c.hex_code,
                 oi.size_number as size
             FROM orders.order_items oi
             LEFT JOIN catalog.products p ON oi.product_id = p.id
             LEFT JOIN catalog.fabrics f ON oi.fabric_id = f.id
-            LEFT JOIN catalog.colors c ON oi.color_id = c.id
+
             WHERE oi.order_id = $1
         `, [id]);
 
@@ -435,10 +434,10 @@ router.post('/quick', async (req, res) => {
             await query(`
                 INSERT INTO orders.order_items (
                     order_id, product_id, product_name, quantity, unit_price, 
-                    total_price, size_number, color_name, created_at
+                    total_price, size_number, created_at
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
-            `, [orderId, productId, productTitle || 'منتج', quantity, unitPrice, totalAmount, size ? parseInt(size) : null, color || null]);
+            `, [orderId, productId, productTitle || 'منتج', quantity, unitPrice, totalAmount, size ? parseInt(size) : null, null]);
         }
 
         res.json({
@@ -550,11 +549,11 @@ router.post('/checkout', async (req, res) => {
             await query(`
                 INSERT INTO orders.order_items (
                     order_id, product_id, fabric_id, product_name, quantity, unit_price, 
-                    total_price, size_number, color_name, created_at
+                    total_price, size_number, created_at
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
             `, [orderId, productId, fabricId, itemName, qty, unitPrice,
-                unitPrice * qty, item.size ? parseInt(item.size) : null, item.color || null]);
+                unitPrice * qty, item.size ? parseInt(item.size) : null, item.null]);
         }
 
         res.json({

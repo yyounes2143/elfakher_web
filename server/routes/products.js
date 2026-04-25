@@ -45,7 +45,6 @@ router.get('/', async (req, res) => {
                 p.created_at,
                 p.available_size_ids,
                 p.available_fabric_ids,
-                p.available_color_ids,
                 p.stock_quantity,
                 c.name_ar as category_name
             FROM catalog.products p
@@ -401,7 +400,6 @@ router.get('/:id', async (req, res) => {
                 p.*,
                 c.name_ar as category_name,
                 (SELECT json_agg(f.*) FROM catalog.fabrics f WHERE f.id = ANY(p.available_fabric_ids)) as fabrics,
-                (SELECT json_agg(col.*) FROM catalog.colors col WHERE col.id = ANY(p.available_color_ids)) as colors,
                 (SELECT json_agg(s.*) FROM catalog.standard_sizes s WHERE s.id = ANY(p.available_size_ids)) as sizes
             FROM catalog.products p
             LEFT JOIN catalog.categories c ON p.category_id = c.id
@@ -449,31 +447,14 @@ router.post('/', authMiddleware, async (req, res) => {
             sku,
             is_featured,
             size_ids, // Array of IDs
-            color_ids, // Array of UUIDs
-            colors, // Array of objects {id, name_ar, hex_code, ...}
-            size_color_availability, // Object { size_uuid: [color_uuids] }
-            image_color_linking_enabled, // Boolean
+
             stock_quantity
         } = req.body;
 
         // Process sizes
         const available_size_ids = size_ids || [];
 
-        // Process colors
-        const available_color_ids = color_ids || [];
 
-        // Separate standard colors (UUIDs) from custom/embedded colors
-        const embeddedColors = [];
-        (colors || []).forEach(c => {
-            const colorValue = c.id || c.value || c;
-            if (typeof colorValue === 'string' && colorValue.startsWith('custom_')) {
-                embeddedColors.push({
-                    id: colorValue,
-                    name_ar: c.name_ar || '',
-                    hex_code: c.hex_code || '#000000'
-                });
-            }
-        });
 
         // Process fabrics
         const available_fabric_ids = fabric_ids || [];
@@ -494,10 +475,8 @@ router.post('/', authMiddleware, async (req, res) => {
                 base_price, sale_price,
                 short_description, full_description,
                 status, images, sku, is_featured,
-                available_size_ids, available_color_ids, embedded_colors,
-                available_fabric_ids,
-                size_color_availability, image_color_linking_enabled, stock_quantity
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                available_size_ids, available_fabric_ids, stock_quantity
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             RETURNING *
         `, [
             name_ar, name_en, slug, primary_category_id,
@@ -506,13 +485,7 @@ router.post('/', authMiddleware, async (req, res) => {
             status || 'active',
             JSON.stringify(images || []),
             sku, is_featured || false,
-            available_size_ids,
-            available_color_ids.length > 0 ? available_color_ids : null,
-            JSON.stringify(embeddedColors),
-            available_fabric_ids.length > 0 ? available_fabric_ids : null,
-            JSON.stringify(size_color_availability || {}),
-            image_color_linking_enabled || false,
-            parseInt(stock_quantity) || 0
+            available_size_ids, available_fabric_ids.length > 0 ? available_fabric_ids : null, parseInt(stock_quantity) || 0
         ]);
 
         res.status(201).json({
@@ -551,31 +524,13 @@ router.put('/:id', authMiddleware, async (req, res) => {
             sku,
             is_featured,
             size_ids,
-            color_ids,
-            colors,
-            size_color_availability,
-            image_color_linking_enabled,
+
             stock_quantity
         } = req.body;
 
         const available_size_ids = size_ids || [];
         const available_fabric_ids = fabric_ids || [];
-        const available_color_ids = color_ids || [];
 
-        // Separate standard colors (UUIDs) from custom/embedded colors
-        let embeddedColors = [];
-        if (colors) {
-            colors.forEach(c => {
-                const colorValue = c.id || c.value || c;
-                if (typeof colorValue === 'string' && colorValue.startsWith('custom_')) {
-                    embeddedColors.push({
-                        id: colorValue,
-                        name_ar: c.name_ar || '',
-                        hex_code: c.hex_code || '#000000'
-                    });
-                }
-            });
-        }
 
         // Use first category from array or single category_id
         const primary_category_id = (category_ids && category_ids.length > 0)
@@ -596,14 +551,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
                 sku = COALESCE($10, sku),
                 is_featured = COALESCE($11, is_featured),
                 available_size_ids = COALESCE($12, available_size_ids),
-                available_color_ids = COALESCE($13, available_color_ids),
-                embedded_colors = COALESCE($14, embedded_colors),
-                available_fabric_ids = COALESCE($15, available_fabric_ids),
-                size_color_availability = COALESCE($16, size_color_availability),
-                image_color_linking_enabled = COALESCE($17, image_color_linking_enabled),
-                stock_quantity = COALESCE($18, stock_quantity),
-                updated_at = NOW()
-            WHERE id = $19
+                available_fabric_ids = COALESCE($13, available_fabric_ids), stock_quantity = COALESCE($14, stock_quantity), updated_at = NOW() WHERE id = $15
             RETURNING *
         `, [
             name_ar, name_en, primary_category_id,
@@ -612,14 +560,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
             status,
             images ? JSON.stringify(images) : null,
             sku, is_featured,
-            available_size_ids,
-            available_color_ids && available_color_ids.length > 0 ? available_color_ids : null,
-            JSON.stringify(embeddedColors),
-            available_fabric_ids && available_fabric_ids.length > 0 ? available_fabric_ids : null,
-            JSON.stringify(size_color_availability || {}),
-            image_color_linking_enabled,
-            stock_quantity,
-            id
+            available_size_ids, available_fabric_ids && available_fabric_ids.length > 0 ? available_fabric_ids : null, stock_quantity, id
         ]);
 
         if (result.rows.length === 0) {

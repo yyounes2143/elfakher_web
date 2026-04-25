@@ -713,21 +713,7 @@
                                 <!-- سيتم ملؤها ديناميكياً من قاعدة البيانات -->
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">الألوان المتاحة للمنتج</label>
-                            <div class="color-select-group" id="globalColorsOptions">
-                                <!-- سيتم ملؤها ديناميكياً من قاعدة البيانات -->
-                            </div>
-                            <!-- Add Custom Color -->
-                            <div class="add-color-row">
-                                <input type="color" id="newColorHex" value="#000000">
-                                <input type="text" id="newColorName" placeholder="اسم اللون الجديد">
-                                <button type="button" class="add-color-btn" onclick="addCustomColor()">
-                                    <span class="material-icons-outlined" style="font-size:1.125rem;">add</span>
-                                    إضافة
-                                </button>
-                            </div>
-                        </div>
+                        <!-- Removed Color Selection -->
                     </div>
 
                     <div class="form-section">
@@ -751,16 +737,7 @@
                             </div>
                         </div>
 
-                        <div class="smart-feature-card">
-                            <div class="feature-toggle">
-                                <input type="checkbox" id="smartInventoryCheckbox"
-                                    onchange="toggleSmartInventory(this)">
-                                <div>
-                                    <div class="feature-toggle-label">تخصيص المخزون (ربط الألوان بالمقاسات)</div>
-                                    <div class="feature-toggle-desc">قم بتفعيل هذا الخيار لتحديد الألوان المتوفرة لكل
-                                        مقاس بشكل منفصل</div>
-                                </div>
-                            </div>
+
 
                             <hr class="feature-divider">
 
@@ -896,19 +873,7 @@
                             <label class="form-label">الأقمشة المتاحة</label>
                             <div class="checkbox-group" id="editFabricsOptions"></div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">الألوان المتاحة للمنتج</label>
-                            <div class="color-select-group" id="editColorsOptions"></div>
-                            <!-- Custom Color -->
-                            <div class="add-color-row">
-                                <input type="color" id="editNewColorHex" value="#000000">
-                                <input type="text" id="editNewColorName" placeholder="اسم اللون الجديد">
-                                <button type="button" class="add-color-btn" onclick="addCustomColor('edit')">
-                                    <span class="material-icons-outlined" style="font-size:1.125rem;">add</span>
-                                    إضافة
-                                </button>
-                            </div>
-                        </div>
+                        <!-- Removed Color Selection -->
                     </div>
 
                     <div class="form-section">
@@ -919,16 +884,7 @@
                             <div class="checkbox-group sizes-group" id="editSizesOptions"></div>
                         </div>
 
-                        <div class="smart-feature-card">
-                            <div class="feature-toggle">
-                                <input type="checkbox" id="editSmartInventoryCheckbox"
-                                    onchange="toggleSmartInventory(this, 'edit')">
-                                <div>
-                                    <div class="feature-toggle-label">تخصيص المخزون (ربط الألوان بالمقاسات)</div>
-                                    <div class="feature-toggle-desc">قم بتفعيل هذا الخيار لتحديد الألوان المتوفرة لكل
-                                        مقاس بشكل منفصل</div>
-                                </div>
-                            </div>
+
 
                             <hr class="feature-divider">
 
@@ -2428,57 +2384,7 @@
                     productImages = p.images || [];
                     renderImages('edit');
 
-                    // Set up Image Color Linking
-                    isImageColorLinkingEnabled = p.image_color_linking_enabled || false;
-                    const editLinkCheckbox = document.getElementById('editLinkImagesColorCheckbox');
-                    if (editLinkCheckbox) {
-                        editLinkCheckbox.checked = isImageColorLinkingEnabled;
-                        const container = document.getElementById('editImageColorLinkingContainer');
-                        if (container) container.classList.toggle('active', isImageColorLinkingEnabled);
-                    }
 
-                    // Reconstruct imageColorLinks from productImages
-                    imageColorLinks = [];
-                    if (isImageColorLinkingEnabled && productImages.length > 0) {
-                        const linksMap = new Map(); // colorId -> { colorName, colorHex, imageIndices: [] }
-
-                        productImages.forEach((img, idx) => {
-                            if (typeof img === 'object' && img !== null && img.colorId) {
-                                if (!linksMap.has(img.colorId)) {
-                                    // Try to find hex from product colors
-                                    const prodColor = p.colors ? p.colors.find(c => c.id === img.colorId) : null;
-                                    linksMap.set(img.colorId, {
-                                        colorId: img.colorId,
-                                        colorName: img.color || (prodColor ? prodColor.name_ar : '-'),
-                                        colorHex: prodColor ? prodColor.hex_code : '',
-                                        imageIndices: []
-                                    });
-                                }
-                                linksMap.get(img.colorId).imageIndices.push(idx);
-                            }
-                        });
-
-                        imageColorLinks = Array.from(linksMap.values());
-                    }
-                    renderImageColorLinks();
-
-                    // Reconstruct Smart Inventory (Size-Color availability)
-                    if (p.size_color_availability && Object.keys(p.size_color_availability).length > 0) {
-                        const smartInvCheckbox = document.getElementById('editSmartInventoryCheckbox');
-                        if (smartInvCheckbox) {
-                            smartInvCheckbox.checked = true;
-                            document.getElementById('editSmartInventoryContainer').classList.add('active');
-                            smartInventoryData = p.size_color_availability;
-                        }
-                    } else {
-                        const smartInvCheckbox = document.getElementById('editSmartInventoryCheckbox');
-                        if (smartInvCheckbox) {
-                            smartInvCheckbox.checked = false;
-                            document.getElementById('editSmartInventoryContainer').classList.remove('active');
-                            smartInventoryData = {};
-                        }
-                    }
-                    renderSmartInventory('edit');
 
                     openModal('editProductModal');
                 }
@@ -2520,27 +2426,6 @@
                 if (product.fabrics && Array.isArray(product.fabrics)) {
                     product.fabrics.forEach(fabric => {
                         const checkbox = fabricsContainer.querySelector(`input[value="${fabric.id}"]`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                }
-            }
-
-            // Render colors and pre-check
-            const colorsContainer = document.getElementById('editColorsOptions');
-            if (colorsContainer && tailoringOptions.colors) {
-                colorsContainer.innerHTML = tailoringOptions.colors.map(color => `
-                    <label class="color-checkbox">
-                        <input type="checkbox" name="colors" value="${color.id}" 
-                               data-name="${color.name_ar}" data-hex="${color.hex_code}">
-                        <span class="color-box" style="background:${color.hex_code};${color.hex_code === '#FFFFFF' || color.hex_code === '#F5F5DC' ? 'border:1px solid #ddd;' : ''}"></span>
-                        ${color.name_ar}
-                    </label>
-                `).join('');
-
-                // Pre-check colors
-                if (product.colors && Array.isArray(product.colors)) {
-                    product.colors.forEach(color => {
-                        const checkbox = colorsContainer.querySelector(`input[value="${color.id}"]`);
                         if (checkbox) checkbox.checked = true;
                     });
                 }
@@ -2917,60 +2802,32 @@
                 return;
             }
 
-            // Collect categories (multiple)
             const selectedCategories = Array.from(form.querySelectorAll('input[name="categories"]:checked')).map(cb => cb.value);
-
-            // Collect fabrics
             const fabrics = Array.from(form.querySelectorAll('input[name="fabrics"]:checked')).map(cb => cb.value);
-
-            // Collect sizes
             const sizes = Array.from(form.querySelectorAll('input[name="sizes"]:checked')).map(cb => cb.value);
 
-            // Collect colors
-            const colors = Array.from(form.querySelectorAll('input[name="colors"]:checked')).map(cb => {
+            // Format images to enforce the object structure
+            const formattedImages = productImages.map(img => {
+                if (typeof img === 'string') return { url: img, sizes: [], price: null };
                 return {
-                    id: cb.value,
-                    name_ar: cb.getAttribute('data-name') || cb.closest('label').textContent.trim(),
-                    hex_code: cb.getAttribute('data-hex') || '#000000'
+                    url: img.url,
+                    sizes: img.sizes || [],
+                    price: img.price ? parseFloat(img.price) : null
                 };
             });
-
-            // Check if smart inventory is enabled
-            const smartInventoryEnabled = document.getElementById('smartInventoryCheckbox')?.checked;
-            const imageColorLinkingEnabled = document.getElementById('linkImagesColorCheckbox')?.checked;
-
-            // Transform images to include color data if linking is enabled
-            let imagesToSave = productImages;
-            if (imageColorLinkingEnabled && imageColorLinks.length > 0) {
-                imagesToSave = productImages.map((img, idx) => {
-                    const imgUrl = typeof img === 'string' ? img : img.url;
-                    const linkedColor = imageColorLinks.find(link => link.imageIndices.includes(idx));
-                    return {
-                        url: imgUrl,
-                        color: linkedColor ? linkedColor.colorName : null,
-                        colorId: linkedColor ? linkedColor.colorId : null
-                    };
-                });
-            }
 
             const payload = {
                 name_ar: name,
                 base_price: parseFloat(price),
-                category_ids: selectedCategories, // Multiple categories
+                category_ids: selectedCategories,
                 fabric_ids: fabrics,
                 stock_quantity: parseInt(form.querySelector('[name="stock"]').value) || 0,
                 sale_price: parseFloat(form.querySelector('[name="salePrice"]').value) || null,
                 short_description: form.querySelector('[name="shortDesc"]').value,
                 full_description: form.querySelector('[name="fullDesc"]').value,
-                images: imagesToSave,
-                size_ids: sizes,
-                color_ids: colors.map(c => c.id),
-                colors: colors,
-                size_color_availability: smartInventoryEnabled ? smartInventoryData : null,
-                image_color_linking_enabled: imageColorLinkingEnabled
+                images: formattedImages,
+                size_ids: sizes
             };
-
-            console.log('🚀 Saving Product:', payload);
 
             try {
                 saveBtn.disabled = true;
@@ -2982,7 +2839,6 @@
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                console.log('🔙 API Response:', data);
 
                 if (data.success) {
                     showToast('تم إضافة المنتج بنجاح');
@@ -3008,44 +2864,18 @@
             const form = document.getElementById('editProductForm');
             const id = form.dataset.id;
 
-            // Collect categories (multiple)
             const selectedCategories = Array.from(form.querySelectorAll('input[name="categories"]:checked')).map(cb => cb.value);
-
-            // Collect fabrics
             const fabrics = Array.from(form.querySelectorAll('input[name="fabrics"]:checked')).map(cb => cb.value);
-
-            // Collect sizes
             const sizes = Array.from(form.querySelectorAll('input[name="sizes"]:checked')).map(cb => cb.value);
 
-            // Collect colors
-            const colors = Array.from(form.querySelectorAll('input[name="colors"]:checked')).map(cb => {
+            const formattedImages = productImages.map(img => {
+                if (typeof img === 'string') return { url: img, sizes: [], price: null };
                 return {
-                    id: cb.value,
-                    name_ar: cb.getAttribute('data-name') || cb.closest('label').textContent.trim(),
-                    hex_code: cb.getAttribute('data-hex') || '#000000'
+                    url: img.url,
+                    sizes: img.sizes || [],
+                    price: img.price ? parseFloat(img.price) : null
                 };
             });
-
-            const smartInventoryEnabled = document.getElementById('editSmartInventoryCheckbox')?.checked;
-            const imageColorLinkingEnabled = document.getElementById('editLinkImagesColorCheckbox')?.checked;
-
-            let imagesToSave = productImages;
-            if (imageColorLinkingEnabled && imageColorLinks.length > 0) {
-                imagesToSave = productImages.map((img, idx) => {
-                    const imgUrl = typeof img === 'string' ? img : img.url;
-                    const linkedColor = imageColorLinks.find(link => link.imageIndices.includes(idx));
-                    return {
-                        url: imgUrl,
-                        color: linkedColor ? linkedColor.colorName : null,
-                        colorId: linkedColor ? linkedColor.colorId : null
-                    };
-                });
-            } else {
-                // If linking disabled, ensure images are saved cleanly without legacy link properties if not desired.
-                imagesToSave = productImages.map((img) => {
-                    return typeof img === 'string' ? img : { url: img.url };
-                });
-            }
 
             const payload = {
                 name_ar: document.getElementById('editName').value,
@@ -3058,15 +2888,9 @@
                 stock_quantity: parseInt(document.getElementById('editStock').value) || 0,
                 status: document.getElementById('editStatus').value,
                 is_featured: document.getElementById('editFeatured').value === 'yes',
-                images: imagesToSave,
-                size_ids: sizes,
-                color_ids: colors.map(c => c.id),
-                colors: colors,
-                size_color_availability: smartInventoryEnabled ? smartInventoryData : null,
-                image_color_linking_enabled: imageColorLinkingEnabled
+                images: formattedImages,
+                size_ids: sizes
             };
-
-            console.log('🚀 Updating Product:', payload);
 
             try {
                 saveBtn.disabled = true;
