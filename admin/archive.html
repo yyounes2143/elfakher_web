@@ -41,7 +41,9 @@
             border-radius: 1rem;
             box-shadow: var(--shadow-glass);
             padding: 1.5rem;
+            overflow: visible; /* Allow shadows to render outside if needed */
         }
+
 
         .filters-toolbar {
             display: flex;
@@ -55,6 +57,8 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            flex: 1;
+            min-width: 150px;
         }
 
         .filter-group label {
@@ -202,9 +206,10 @@
             top: 0;
             right: 0;
             height: 100%;
+            width: var(--progress);
             background: var(--admin-accent);
             border-radius: 2px;
-            transition: width 0.5s ease;
+            transition: all 0.5s ease;
         }
 
         .step-item {
@@ -213,6 +218,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+                position: relative;
+                z-index: 1;
             gap: 0.75rem;
             width: 100px;
         }
@@ -227,20 +234,38 @@
             align-items: center;
             justify-content: center;
             color: var(--admin-muted);
+            flex-shrink: 0;
+            box-sizing: border-box;
+            background: #ffffff; /* Explicit background to cover the line underneath */
             transition: all 0.3s;
+        }
+
+        .dark .step-icon {
+            background: #1A232E; /* Match dark mode surface background to cover the line */
         }
 
         .step-item.completed .step-icon {
             background: var(--admin-accent);
             border-color: var(--admin-accent);
             color: white;
-            box-shadow: 0 0 15px rgba(193, 154, 91, 0.4);
+            box-shadow: 0 4px 15px rgba(193, 154, 91, 0.4);
+            outline: 3px solid var(--admin-surface); /* Replaces background gap correctly with surface color */
+        }
+
+        .dark .step-item.completed .step-icon {
+            background: var(--admin-accent); /* Override dark mode default for completed */
         }
 
         .step-item.active .step-icon {
             border-color: var(--admin-accent);
             color: var(--admin-accent);
             border-width: 3px;
+            box-shadow: 0 4px 15px rgba(193, 154, 91, 0.2);
+            outline: 3px solid var(--admin-surface);
+        }
+
+        .dark .step-item.active .step-icon {
+            background: #1A232E; /* Keep dark background for active */
         }
 
         .step-label {
@@ -276,24 +301,35 @@
                 flex-direction: column; 
                 gap: 2rem; 
                 align-items: flex-start; 
-                padding-right: 2rem; 
+                padding-right: 0.5rem;
+                padding-left: 0.5rem;
             }
             .stepper-line { 
                 width: 4px; 
-                height: auto; 
-                bottom: 3rem; 
+                height: calc(100% - 48px);
+                bottom: auto;
                 top: 24px; 
                 left: auto; 
-                right: 3rem; 
+                right: calc(0.5rem + 24px - 2px); /* Re-add 0.5rem padding + half icon - half line */
+            }
+            .stepper-progress {
+                width: 100% !important;
+                height: var(--progress) !important;
+                transition: height 0.5s ease;
             }
             .step-item { 
                 flex-direction: row; 
                 width: 100%; 
+                justify-content: flex-start; /* Ensure items align from the right in RTL */
+                gap: 1.5rem;
+                align-items: center;
+                position: relative;
+                z-index: 1;
             }
             .step-item > div {
                 display: flex;
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: flex-start; /* Correct for RTL */
             }
             .step-label, .step-date { text-align: right; }
         }
@@ -301,7 +337,7 @@
 </head>
 
 <body style="background:var(--admin-bg);">
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <div class="admin-layout">
         <aside class="admin-sidebar" id="adminSidebar">
@@ -310,6 +346,7 @@
                     <img src="../assets/logo.png" alt="ELFAKHER">
                     <span class="sidebar-logo-text">ELFAKHER</span>
                 </a>
+                <button class="mobile-close-btn" onclick="closeSidebar()" style="display:none;background:none;border:none;color:var(--admin-muted);cursor:pointer;"><span class="material-icons-outlined">close</span></button>
             </div>
             <nav class="sidebar-nav">
                 <a href="index.html" class="nav-item"><span class="material-icons-outlined">dashboard</span> لوحة التحكم</a>
@@ -329,7 +366,7 @@
         <main class="admin-main">
             <header class="admin-header">
                 <div style="display:flex;align-items:center;gap:0.75rem;">
-                    <button class="mobile-menu-btn" onclick="toggleSidebar()"><span class="material-icons-outlined">menu</span></button>
+                    <button class="mobile-menu-btn" onclick="openSidebar()"><span class="material-icons-outlined">menu</span></button>
                     <div>
                         <h1 class="page-title">الأرشيف الزمني</h1>
                         <p class="page-subtitle">قائمة الطلبات والمبيعات المجمعة زمنياً</p>
@@ -358,8 +395,10 @@
                             <!-- Dynamically filled -->
                         </select>
                     </div>
-                    <button class="btn-admin" onclick="loadArchive()"><span class="material-icons-outlined">search</span> تطبيق</button>
-                    <button class="btn-admin btn-admin-outline" onclick="exportArchive()"><span class="material-icons-outlined">download</span> تقرير CSV</button>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; width:100%;">
+                        <button class="btn-admin" onclick="loadArchive()" style="flex:1; justify-content:center;"><span class="material-icons-outlined">search</span> تطبيق</button>
+                    <button class="btn-admin btn-admin-outline" onclick="exportArchive()" style="flex:1; justify-content:center;"><span class="material-icons-outlined">download</span> تقرير CSV</button>
+                    </div>
                 </div>
 
                 <!-- Aggregate Stats -->
@@ -402,12 +441,10 @@
         <div class="modal-container" style="max-width:900px;">
             <div class="modal-header">
                 <div>
-                    <h2 class="modal-title" style="display:flex;align-items:center;gap:0.5rem;" id="oamTitle">
-                        تفاصيل الطلب 
-                    </h2>
+                    <h2><span id="oamTitle" style="display:flex;align-items:center;gap:0.5rem;">تفاصيل الطلب</span></h2>
                     <p style="font-size:0.875rem;color:var(--admin-muted);margin-top:0.25rem;" id="oamSubtitle">تحجيم البيانات</p>
                 </div>
-                <button class="btn-admin-icon" onclick="closeModal('orderArchiveModal')"><span class="material-icons-outlined">close</span></button>
+                <button class="modal-close" onclick="closeModal('orderArchiveModal')"><span class="material-icons-outlined">close</span></button>
             </div>
 
             <div class="modal-body" id="orderArchiveBody" style="background:var(--admin-bg);">
@@ -586,11 +623,11 @@
             }
 
             const stepperHTML = `
-                <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
+                <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem; overflow: visible; z-index: 2; position: relative;">
                     <h3 style="margin-bottom: 1.5rem; font-size: 1.125rem;">المدار الزمني للطلب</h3>
                     <div class="stepper-container">
                         <div class="stepper-line">
-                            <div class="stepper-progress" style="width: ${(p1+p2+p3)/3}%"></div>
+                            <div class="stepper-progress" style="--progress: ${(p1+p2+p3)/3}%;"></div>
                         </div>
                         
                         <!-- Step 1 -->
@@ -722,7 +759,7 @@
         }
 
         function showToast(message, type = 'success') {
-            alert(message); // fallback simple toast
+            showNotification(message, type);
         }
     </script>
 </body>

@@ -401,7 +401,7 @@
 
                         <div class="input-group">
                             <label class="form-label">رقم الهاتف *</label>
-                            <input type="tel" class="premium-input" name="phone" placeholder="مثال: 0550123456" required>
+                            <input type="tel" class="premium-input" name="phone" placeholder="مثال: " required>
                         </div>
 
                         <div class="input-group">
@@ -521,7 +521,7 @@
                 html += `
                     <div class="summary-item">
                         <div class="summary-item-image">
-                            <img src="${item.image || '/assets/placeholder.png'}" alt="${item.title}">
+                            <img src="${item.image || '/assets/placeholder.png'}" alt="${item.title}" onerror="this.src='../assets/logo.png'">
                         </div>
                         <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
                             <p style="font-weight:700; font-size: 1rem; color: var(--text-primary); margin-bottom: 0.2rem;">${item.title}</p>
@@ -551,7 +551,7 @@
                 const cart = JSON.parse(localStorage.getItem('elfakher_cart') || '[]');
 
                 if (cart.length === 0) {
-                    alert('السلة فارغة!');
+                    showNotification('السلة فارغة!', 'warning');
                     return;
                 }
 
@@ -582,7 +582,7 @@
                         localStorage.removeItem('elfakher_cart');
 
                         // Show success
-                        alert(`تم إنشاء طلبك بنجاح!\n\nرقم الطلب: ${result.data.orderNumber}\n\nسنتواصل معك قريباً للتأكيد.`);
+                        showNotification(`تم إنشاء طلبك بنجاح!\n\nرقم الطلب: ${result.data.orderNumber}\n\nسنتواصل معك قريباً للتأكيد.`, 'success');
 
                         // Redirect to home
                         window.location.href = 'index.html';

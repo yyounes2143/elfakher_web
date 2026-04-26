@@ -207,17 +207,21 @@ router.put('/shipping/wilayas/bulk', authMiddleware, async (req, res) => {
             });
         }
 
-        let updated = 0;
-        for (const w of wilayas) {
-            if (w.id && w.shipping_cost !== undefined) {
-                await db.query(`
-                    UPDATE shipping.wilayas SET
-                        shipping_cost = $1
-                    WHERE id = $2
-                `, [parseFloat(w.shipping_cost) || 0, w.id]);
-                updated++;
-            }
+        const validWilayas = wilayas.filter(w => w.id && w.shipping_cost !== undefined);
+
+        if (validWilayas.length > 0) {
+            const ids = validWilayas.map(w => w.id);
+            const costs = validWilayas.map(w => parseFloat(w.shipping_cost) || 0);
+
+            await db.query(`
+                UPDATE shipping.wilayas AS w
+                SET shipping_cost = u.shipping_cost::numeric
+                FROM (SELECT unnest($1::int[]) AS id, unnest($2::numeric[]) AS shipping_cost) AS u
+                WHERE w.id = u.id
+            `, [ids, costs]);
         }
+
+        const updated = validWilayas.length;
 
         res.json({
             success: true,

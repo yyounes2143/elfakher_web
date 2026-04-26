@@ -561,84 +561,7 @@
         }
 
         /* ========== Toast Notifications ========== */
-        .toast-container {
-            position: fixed;
-            top: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            pointer-events: none;
-        }
 
-        .toast {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.875rem 1.25rem;
-            border-radius: 0.75rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            pointer-events: auto;
-            animation: toastIn 0.4s cubic-bezier(.4, 0, .2, 1) both;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            min-width: 280px;
-        }
-
-        .toast.toast-out {
-            animation: toastOut 0.3s ease both;
-        }
-
-        .toast-success {
-            background: #064E3B;
-            color: #D1FAE5;
-        }
-
-        .toast-error {
-            background: #7F1D1D;
-            color: #FEE2E2;
-        }
-
-        .toast-close {
-            margin-right: auto;
-            background: none;
-            border: none;
-            color: inherit;
-            opacity: 0.7;
-            cursor: pointer;
-            padding: 0.25rem;
-            display: flex;
-        }
-
-        .toast-close:hover {
-            opacity: 1;
-        }
-
-        @keyframes toastIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes toastOut {
-            from {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-            to {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-        }
 
         /* ========== Category Add Form ========== */
         .category-add-form {
@@ -835,6 +758,9 @@
                         </div>
                         <div class="form-group"><label class="form-label">وصف المتجر</label><textarea class="form-input"
                                 rows="3" id="storeDesc"></textarea>
+                        </div>
+                        <div class="form-group"><label class="form-label">ملاحظات المتجر (تظهر للعملاء)</label><textarea class="form-input"
+                                rows="3" id="storeNotes" placeholder="أضف أي ملاحظات أو شروط تود عرضها للعملاء..."></textarea>
                         </div>
 
                         <div class="form-row">
@@ -1207,22 +1133,9 @@
 
         // ========== Toast Notifications ==========
         function ensureToastContainer() {
-            if (!document.querySelector('.toast-container')) {
-                const c = document.createElement('div');
-                c.className = 'toast-container';
-                document.body.appendChild(c);
-            }
+
         }
-        function showToast(message, type = 'success') {
-            ensureToastContainer();
-            const container = document.querySelector('.toast-container');
-            const icon = type === 'success' ? 'check_circle' : 'error';
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<span class="material-icons-outlined">${icon}</span>${message}<button class="toast-close" onclick="this.parentElement.remove()"><span class="material-icons-outlined" style="font-size:1rem;">close</span></button>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.classList.add('toast-out'); setTimeout(() => toast.remove(), 300); }, 3500);
-        }
+
         ensureToastContainer();
 
         // Tab Navigation
@@ -1244,10 +1157,10 @@
             const password = document.getElementById('au-password').value;
             const role = document.getElementById('au-role').value;
             if (!name || !email || !password) {
-                showToast('الرجاء ملء جميع الحقول', 'error');
+                showNotification('الرجاء ملء جميع الحقول', 'error');
                 return;
             }
-            showToast('تم إضافة المستخدم بنجاح');
+            showNotification('تم إضافة المستخدم بنجاح');
             closeModal('userModal');
         }
 
@@ -1275,7 +1188,8 @@
             'store_description': 'storeDesc',
             'social_facebook': 'storeFacebook',
             'social_instagram': 'storeInstagram',
-            'social_tiktok': 'storeTiktok'
+            'social_tiktok': 'storeTiktok',
+            'store_notes': 'storeNotes'
         };
 
         async function loadSettings() {
@@ -1324,7 +1238,7 @@
                 }, 1500);
             } catch (err) {
                 console.error('Error saving settings:', err);
-                showToast('فشل في حفظ الإعدادات', 'error');
+                showNotification('فشل في حفظ الإعدادات', 'error');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
@@ -1376,7 +1290,7 @@
         function applyBulkPrice() {
             const price = document.getElementById('bulkPrice').value;
             if (!price || isNaN(price)) {
-                showToast('الرجاء إدخال سعر صالح', 'error');
+                showNotification('الرجاء إدخال سعر صالح', 'error');
                 return;
             }
             document.querySelectorAll('.wilaya-price').forEach(input => {
@@ -1412,13 +1326,13 @@
                         btn.innerHTML = '<span class="material-icons-outlined">save</span> حفظ جميع الأسعار';
                     }, 1000);
                 } else {
-                    showToast(data.message || 'فشل في الحفظ', 'error');
+                    showNotification(data.message || 'فشل في الحفظ', 'error');
                     btn.disabled = false;
                     btn.innerHTML = '<span class="material-icons-outlined">save</span> حفظ جميع الأسعار';
                 }
             } catch (err) {
                 console.error('Error saving wilayas:', err);
-                showToast('حدث خطأ أثناء الحفظ', 'error');
+                showNotification('حدث خطأ أثناء الحفظ', 'error');
                 btn.disabled = false;
                 btn.innerHTML = '<span class="material-icons-outlined">save</span> حفظ جميع الأسعار';
             }
@@ -1476,7 +1390,7 @@
             const nameEn = document.getElementById('newCategoryNameEn').value.trim();
 
             if (!nameAr) {
-                showToast('الرجاء إدخال الاسم بالعربية', 'error');
+                showNotification('الرجاء إدخال الاسم بالعربية', 'error');
                 return;
             }
 
@@ -1491,13 +1405,13 @@
                     document.getElementById('newCategoryNameAr').value = '';
                     document.getElementById('newCategoryNameEn').value = '';
                     loadCategories();
-                    showToast('تم إضافة الفئة بنجاح');
+                    showNotification('تم إضافة الفئة بنجاح');
                 } else {
-                    showToast(data.message || 'فشل في إضافة الفئة', 'error');
+                    showNotification(data.message || 'فشل في إضافة الفئة', 'error');
                 }
             } catch (err) {
                 console.error('Error adding category:', err);
-                showToast('حدث خطأ أثناء الإضافة', 'error');
+                showNotification('حدث خطأ أثناء الإضافة', 'error');
             }
         }
 
@@ -1528,7 +1442,7 @@
             const isActive = document.getElementById('editCategoryActive').classList.contains('active');
 
             if (!nameAr) {
-                showToast('الرجاء إدخال الاسم بالعربية', 'error');
+                showNotification('الرجاء إدخال الاسم بالعربية', 'error');
                 return;
             }
 
@@ -1542,13 +1456,13 @@
                 if (data.success) {
                     closeModal('categoryModal');
                     loadCategories();
-                    showToast('تم تحديث الفئة بنجاح');
+                    showNotification('تم تحديث الفئة بنجاح');
                 } else {
-                    showToast(data.message || 'فشل في تحديث الفئة', 'error');
+                    showNotification(data.message || 'فشل في تحديث الفئة', 'error');
                 }
             } catch (err) {
                 console.error('Error updating category:', err);
-                showToast('حدث خطأ أثناء التحديث', 'error');
+                showNotification('حدث خطأ أثناء التحديث', 'error');
             }
         }
 
@@ -1560,13 +1474,13 @@
                 const data = await res.json();
                 if (data.success) {
                     loadCategories();
-                    showToast('تم حذف الفئة بنجاح');
+                    showNotification('تم حذف الفئة بنجاح');
                 } else {
-                    showToast(data.message || 'فشل في حذف الفئة', 'error');
+                    showNotification(data.message || 'فشل في حذف الفئة', 'error');
                 }
             } catch (err) {
                 console.error('Error deleting category:', err);
-                showToast('حدث خطأ أثناء الحذف', 'error');
+                showNotification('حدث خطأ أثناء الحذف', 'error');
             }
         }
 

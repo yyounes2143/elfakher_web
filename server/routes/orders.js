@@ -235,7 +235,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
                 p.name_ar as product_name,
                 p.images->>0 as image_url,
                 f.name_ar as fabric_name,
-                c.hex_code,
+
                 oi.size_number as size
             FROM orders.order_items oi
             LEFT JOIN catalog.products p ON oi.product_id = p.id

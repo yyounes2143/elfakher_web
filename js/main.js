@@ -211,20 +211,7 @@ if (!window.cart) {
         },
 
         showNotification(message) {
-            const notification = document.createElement('div');
-            notification.className = 'cart-notification';
-            notification.innerHTML = `
-            <span class="material-icons-outlined">check_circle</span>
-            <span>${message}</span>
-        `;
-
-            document.body.appendChild(notification);
-
-            setTimeout(() => notification.classList.add('show'), 10);
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => notification.remove(), 300);
-            }, 2000);
+            if(window.showNotification) window.showNotification(message, 'success');
         },
 
         render() {
@@ -497,14 +484,6 @@ function populateWilayaSelect() {
     });
 }
 
-// Format Price
-function formatPrice(price) {
-    return new Intl.NumberFormat('ar-DZ', {
-        style: 'decimal',
-        minimumFractionDigits: 0
-    }).format(price) + ' DZD';
-}
-
 // ========== Product Page Functions ==========
 
 // Add to Cart Button
@@ -541,7 +520,7 @@ function handleAddToCart() {
     }
 
     const mainImg = document.getElementById('mainImage')?.src || '';
-    const image = mainImg.length > 200 ? '' : mainImg;
+    const image = mainImg;
 
     // Check for custom measurements
     const customMeasurements = {};
@@ -613,8 +592,8 @@ function updateCartTotals() {
     const subtotalEl = document.querySelector('.summary-row:first-child span:last-child');
     const totalEl = document.querySelector('.summary-row.total span:last-child');
 
-    if (subtotalEl) subtotalEl.textContent = formatNumber(subtotal) + ' دج';
-    if (totalEl) totalEl.textContent = formatNumber(subtotal) + ' دج';
+    if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal);
+    if (totalEl) totalEl.textContent = formatPrice(subtotal);
 }
 
 // ========== Checkout Page Functions ==========
@@ -824,23 +803,263 @@ function initContactForm() {
 
 // ========== Utility Functions ==========
 
-function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.className = 'cart-notification';
-    notification.style.backgroundColor = type === 'error' ? 'var(--error, #EF4444)' : 'var(--primary)';
-    notification.innerHTML = `
-        <span class="material-icons-outlined">${type === 'error' ? 'error' : 'check_circle'}</span>
-        <span>${message}</span>
+
+// ==========================================
+// GLASSMORPHISM NOTIFICATION SYSTEM
+// ==========================================
+
+// Add glassmorphism notification styles dynamically
+if (!document.getElementById('glass-notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'glass-notification-styles';
+    style.textContent = `
+        .glass-toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+            max-width: calc(100vw - 40px);
+        }
+
+        .glass-toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            color: var(--text, #111827);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 500;
+            pointer-events: auto;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: grab;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+            direction: rtl;
+        }
+
+        /* Dark mode support for admin dashboard or dark themes */
+        @media (prefers-color-scheme: dark) {
+            body.admin-body .glass-toast {
+                background: rgba(30, 41, 59, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #f8fafc;
+            }
+        }
+
+        /* For admin dashboard specifically */
+        .admin-sidebar ~ .main-content .glass-toast,
+        .admin-sidebar ~ * .glass-toast {
+             background: rgba(30, 41, 59, 0.7);
+             color: #fff;
+             border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .glass-toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .glass-toast.swiping {
+            transition: none;
+        }
+
+        .glass-toast.hiding {
+            transform: translateX(120%) !important;
+            opacity: 0 !important;
+            transition: all 0.3s ease-in !important;
+        }
+
+        .glass-toast-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .glass-toast-icon .material-icons-outlined {
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .glass-toast-content {
+            flex-grow: 1;
+            line-height: 1.4;
+        }
+
+        .glass-toast-close {
+            background: none;
+            border: none;
+            color: inherit;
+            opacity: 0.6;
+            cursor: pointer;
+            padding: 4px;
+            margin: -4px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .glass-toast-close:hover {
+            opacity: 1;
+            background: rgba(0,0,0,0.05);
+        }
+
+        /* Type Variations */
+        .glass-toast.success .glass-toast-icon { background: linear-gradient(135deg, #10B981, #059669); }
+        .glass-toast.error .glass-toast-icon { background: linear-gradient(135deg, #EF4444, #DC2626); }
+        .glass-toast.warning .glass-toast-icon { background: linear-gradient(135deg, #F59E0B, #D97706); }
+        .glass-toast.info .glass-toast-icon { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+
+        /* Subtle glow border based on type */
+        .glass-toast.success { border-right: 4px solid #10B981; }
+        .glass-toast.error { border-right: 4px solid #EF4444; }
+        .glass-toast.warning { border-right: 4px solid #F59E0B; }
+        .glass-toast.info { border-right: 4px solid #3B82F6; }
+    `;
+    document.head.appendChild(style);
+}
+
+window.showNotification = function(message, type = 'success') {
+    // Determine icon based on type
+    let iconName = 'info';
+    if (type === 'success') iconName = 'check';
+    else if (type === 'error') iconName = 'close';
+    else if (type === 'warning') iconName = 'warning';
+
+    // Create container if not exists
+    let container = document.querySelector('.glass-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'glass-toast-container';
+        document.body.appendChild(container);
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `glass-toast ${type}`;
+
+    toast.innerHTML = `
+        <div class="glass-toast-icon">
+            <span class="material-icons-outlined">${iconName}</span>
+        </div>
+        <div class="glass-toast-content">${message}</div>
+        <button class="glass-toast-close" title="إغلاق">
+            <span class="material-icons-outlined" style="font-size: 16px;">close</span>
+        </button>
     `;
 
-    document.body.appendChild(notification);
+    container.appendChild(toast);
 
-    setTimeout(() => notification.classList.add('show'), 10);
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-    }, 2500);
-}
+    // Trigger animation
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+    });
+
+    // Handle close button
+    const closeBtn = toast.querySelector('.glass-toast-close');
+    const removeToast = () => {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+            if (toast.parentElement) toast.remove();
+            if (container.children.length === 0) container.remove();
+        }, 300);
+    };
+    closeBtn.addEventListener('click', removeToast);
+
+    // Auto dismiss
+    let timeoutId = setTimeout(removeToast, 5000);
+
+    // Pause auto dismiss on hover
+    toast.addEventListener('mouseenter', () => clearTimeout(timeoutId));
+    toast.addEventListener('mouseleave', () => {
+        timeoutId = setTimeout(removeToast, 3000);
+    });
+
+    // Swipe to dismiss logic
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+
+    const onDragStart = (e) => {
+        isDragging = true;
+        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        toast.classList.add('swiping');
+        toast.style.cursor = 'grabbing';
+        clearTimeout(timeoutId);
+    };
+
+    const onDragMove = (e) => {
+        if (!isDragging) return;
+        const x = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        currentX = x - startX;
+
+        // Only allow swiping to the right (RTL - hide direction)
+        if (currentX > 0) {
+            toast.style.transform = `translateX(${currentX}px)`;
+            toast.style.opacity = 1 - (currentX / 200);
+        }
+    };
+
+    const onDragEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        toast.classList.remove('swiping');
+        toast.style.cursor = 'grab';
+
+        if (currentX > 100) {
+            removeToast();
+        } else {
+            toast.style.transform = '';
+            toast.style.opacity = '';
+            timeoutId = setTimeout(removeToast, 3000);
+        }
+        currentX = 0;
+    };
+
+    toast.addEventListener('mousedown', onDragStart);
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('mouseup', onDragEnd);
+
+    toast.addEventListener('touchstart', onDragStart, { passive: true });
+    window.addEventListener('touchmove', onDragMove, { passive: true });
+    window.addEventListener('touchend', onDragEnd);
+};
+
+// Map old global showToast and alert to the new notification system
+window.showToast = window.showNotification;
+const originalAlert = window.alert;
+window.alert = function(message) {
+    if (typeof message === 'string' && (message.toLowerCase().includes('خطأ') || message.toLowerCase().includes('فشل') || message.toLowerCase().includes('error'))) {
+        window.showNotification(message, 'error');
+    } else if (typeof message === 'string' && (message.toLowerCase().includes('نجاح') || message.toLowerCase().includes('تم'))) {
+        window.showNotification(message, 'success');
+    } else {
+        window.showNotification(message, 'info');
+    }
+};
+
+
 
 function formatNumber(num) {
     return new Intl.NumberFormat('ar-DZ').format(num);
@@ -867,10 +1086,140 @@ function logout() {
     window.location.href = '/admin/login.html';
 }
 
+
+// Load Store Settings
+async function loadStoreSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        if (!response.ok) return;
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const data = result.data;
+
+            // Clean up JSONB extra quotes for string settings
+            for (const key in data) {
+                if (typeof data[key] === 'string') {
+                    data[key] = data[key].replace(/^"|"$/g, '');
+                }
+            }
+
+            // Format phone number correctly depending on whether it has a plus or not
+            const formatWa = (phone) => {
+                if (!phone) return '';
+                // Remove all non-digits, but keep the plus at the beginning if it exists
+                let cleaned = phone.replace(/[^\d+]/g, '');
+                // If it starts with a plus, remove it for WA link (e.g. +213 -> 213)
+                if (cleaned.startsWith('+')) {
+                   cleaned = cleaned.substring(1);
+                }
+                return cleaned;
+            };
+
+            // 1. WhatsApp Links
+            const waNumber = data.whatsapp_number || data.store_phone;
+            if (waNumber) {
+                const waLink = 'https://wa.me/' + formatWa(waNumber);
+
+                // Update hrefs
+                document.querySelectorAll('.whatsapp-float, .whatsapp-btn, .social-wa, a[href^="https://wa.me/"]').forEach(el => {
+                    el.href = waLink;
+                });
+
+                // Update text content where the link text itself is a whatsapp text, but don't override the SVG icons
+                document.querySelectorAll('a[href^="https://wa.me/"]').forEach(el => {
+                    // Check if the element contains an SVG or if it's purely text
+                    if (!el.querySelector('svg') && !el.classList.contains('whatsapp-float') && !el.classList.contains('whatsapp-btn') && !el.classList.contains('social-wa')) {
+                         if (el.textContent.trim() === 'واتساب' || el.textContent.trim() === 'Whatsapp') {
+                             // leave it
+                         }
+                    }
+                });
+            }
+
+            // 2. Phone Links
+            if (data.store_phone) {
+                document.querySelectorAll('a[href^="tel:"]').forEach(el => {
+                    el.href = 'tel:' + data.store_phone;
+                    // If the text looks like a phone number, update it. Otherwise (if it says "Call Us", leave it)
+                    // If it has children (like svgs), avoid changing innerText entirely.
+                    if (el.children.length === 0 && !el.querySelector('svg')) {
+                        el.textContent = data.store_phone;
+                    }
+                });
+
+                // Specifically targeting phone displays in contact page
+                document.querySelectorAll('.contact-phone-display').forEach(el => {
+                   el.textContent = data.store_phone;
+                });
+            }
+
+            // 3. Email Links
+            if (data.store_email) {
+                document.querySelectorAll('a[href^="mailto:"]').forEach(el => {
+                    el.href = 'mailto:' + data.store_email;
+                    if (el.children.length === 0 && !el.querySelector('svg')) {
+                        el.textContent = data.store_email;
+                    }
+                });
+
+                // Specifically targeting email displays in contact page
+                document.querySelectorAll('.contact-email-display').forEach(el => {
+                   el.textContent = data.store_email;
+                });
+            }
+
+            // 4. Social Links
+            const updateSocial = (selector, url) => {
+                if (url) {
+                    document.querySelectorAll(selector).forEach(el => {
+                        el.href = url;
+                        el.style.display = ''; // Show if hidden
+                    });
+                } else {
+                    document.querySelectorAll(selector).forEach(el => {
+                        // Optionally hide them if empty
+                        el.style.display = 'none';
+                    });
+                }
+            };
+
+            updateSocial('.social-fb, .social-fb-link', data.social_facebook);
+            updateSocial('.social-ig, .social-ig-link', data.social_instagram);
+            updateSocial('.social-tt, .social-tt-link', data.social_tiktok);
+
+            // 5. Store Notes
+            if (data.store_notes) {
+                document.querySelectorAll('.dynamic-store-notes').forEach(el => {
+                    el.textContent = data.store_notes;
+                    el.style.display = 'block';
+
+                    // Show parent container if it was hidden
+                    const parentSection = el.closest('.store-notes-section');
+                    if (parentSection) {
+                        parentSection.style.display = '';
+                    }
+                });
+            } else {
+                document.querySelectorAll('.dynamic-store-notes').forEach(el => {
+                    el.style.display = 'none';
+                    const parentSection = el.closest('.store-notes-section');
+                    if (parentSection) {
+                        parentSection.style.display = 'none';
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading store settings:', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initAuth(); // التحقق من المصادقة أولاً
     initDarkMode();
     initMobileMenu();
+    loadStoreSettings();
     initProductGallery();
     initSizeSelection();
     initQuickOrderForm();
@@ -902,42 +1251,4 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDarkModeIcon(isDark);
 });
 
-// Add notification styles dynamically
-if (!document.getElementById('main-notification-styles')) {
-    const notificationStyles = document.createElement('style');
-    notificationStyles.id = 'main-notification-styles';
-    notificationStyles.textContent = `
-    .cart-notification {
-        position: fixed;
-        bottom: 6rem;
-        right: 1.5rem;
-        background-color: var(--primary);
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        transform: translateX(120%);
-        transition: transform 0.3s ease;
-        z-index: 1000;
-        font-family: inherit;
-    }
-    
-    .cart-notification.show {
-        transform: translateX(0);
-    }
-    
-    .cart-notification .material-icons-outlined {
-        color: #10B981;
-    }
-    
-    .filter-option input:checked + span,
-    .filter-option:has(input:checked) {
-        font-weight: 600;
-    }
-`;
-    document.head.appendChild(notificationStyles);
-}
 
